@@ -41,7 +41,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Driver Login</h1>
+        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Freight Login</h1>
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
