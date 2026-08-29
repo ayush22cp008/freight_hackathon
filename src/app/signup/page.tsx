@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [driverCode, setDriverCode] = useState('');
+  const [requestedRole, setRequestedRole] = useState<'DRIVER' | 'COMPANY'>('DRIVER');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, driver_code: driverCode }),
+        body: JSON.stringify({ email, password, requested_role: requestedRole }),
       });
 
       const data = await res.json();
@@ -74,19 +74,32 @@ export default function SignupPage() {
             />
           </div>
 
-          <div>
-            <label htmlFor="driverCode" className="block text-sm font-medium text-gray-700">
-              Driver Code
-            </label>
-            <input
-              type="text"
-              id="driverCode"
-              value={driverCode}
-              onChange={(e) => setDriverCode(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="e.g. DRV001"
-              required
-            />
+          <div className="space-y-2">
+            <span className="block text-sm font-medium text-gray-700">I am a:</span>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  value="DRIVER"
+                  checked={requestedRole === 'DRIVER'}
+                  onChange={() => setRequestedRole('DRIVER')}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-900">Driver</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  value="COMPANY"
+                  checked={requestedRole === 'COMPANY'}
+                  onChange={() => setRequestedRole('COMPANY')}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-900">Company</span>
+              </label>
+            </div>
           </div>
           
           {error && <p className="text-red-500 text-sm">{error}</p>}

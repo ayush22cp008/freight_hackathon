@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { createClient } from '@/lib/supabase/server';
+import { getFreightIdentity } from '@/lib/auth';
 import Link from 'next/link';
 
 export default async function Home() {
@@ -11,10 +12,38 @@ export default async function Home() {
     redirect('/login');
   }
 
+  const identity = await getFreightIdentity();
+
+  if (!identity || identity.verification_status !== 'VERIFIED') {
+    redirect('/onboarding');
+  }
+
+  if (identity.trusted_role === 'COMPANY') {
+    // Show Company Dashboard
+    const { data: company } = await supabaseServer
+      .from('companies')
+      .select('name')
+      .eq('auth_id', user.id)
+      .single();
+
+    return (
+      <main className="p-8 max-w-4xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold">Company Dashboard</h1>
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
+          <p className="text-gray-600">
+            This is the verified company portal. From here you can manage your fleet, drivers, and trips.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // Otherwise, Driver Dashboard
   // Get driver using auth_id
   const { data: driver } = await supabaseServer
     .from('drivers')
-    .select('id')
+    .select('id, name')
     .eq('auth_id', user.id)
     .single();
 
@@ -22,7 +51,7 @@ export default async function Home() {
     return (
       <main className="p-8 max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">No Driver Profile</h1>
-        <p className="text-gray-600">Your account is not linked to a driver code.</p>
+        <p className="text-gray-600">Your account is not linked to a driver record. Please contact an admin.</p>
       </main>
     );
   }
@@ -40,7 +69,7 @@ export default async function Home() {
   if (!trip) {
     return (
       <main className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Freight Hackathon MVP</h1>
+        <h1 className="text-2xl font-bold mb-4">Welcome, {driver.name}</h1>
         <p className="text-gray-600">No active trips assigned at this time.</p>
       </main>
     );
