@@ -31,9 +31,17 @@ export default async function Home() {
         <h1 className="text-3xl font-bold">Company Dashboard</h1>
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             This is the verified company portal. From here you can manage your fleet, drivers, and trips.
           </p>
+          <div className="pt-4 border-t border-gray-100">
+            <Link 
+              href="/company/trips/create"
+              className="inline-block bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            >
+              Create New Trip
+            </Link>
+          </div>
         </div>
       </main>
     );
