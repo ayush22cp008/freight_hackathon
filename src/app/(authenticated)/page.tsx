@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { createClient } from '@/lib/supabase/server';
 import { getFreightIdentity } from '@/lib/auth';
 import Link from 'next/link';
+import ClaimTripButton from './ClaimTripButton';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -86,16 +87,50 @@ export default async function Home() {
   // Get active trip
   const { data: trip } = await supabaseServer
     .from('trips')
-    .select('id, facility_name')
+    .select('id, facility_name, status')
     .eq('driver_id', driverId)
-    .eq('status', 'active')
+    .in('status', ['active', 'claimed', 'in_progress'])
+    .limit(1)
     .single();
 
   if (!trip) {
+    // If no active trip, fetch published trips available for claim
+    const { data: publishedTrips } = await supabaseServer
+      .from('trips')
+      .select('id, facility_name, destination_name, distance, duration, payout')
+      .eq('status', 'published')
+      .is('driver_id', null)
+      .order('created_at', { ascending: false });
+
     return (
-      <main className="p-8 max-w-2xl mx-auto">
+      <main className="p-8 max-w-4xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold mb-4">Welcome, {driver.name}</h1>
-        <p className="text-gray-600">No active trips assigned at this time.</p>
+        <h2 className="text-xl font-semibold mb-4">Available Trips</h2>
+        
+        {!publishedTrips || publishedTrips.length === 0 ? (
+          <p className="text-gray-600 bg-white p-6 rounded-lg shadow border border-gray-200">
+            No published trips available at this time.
+          </p>
+        ) : (
+          <div className="grid gap-6">
+            {publishedTrips.map((pt) => (
+              <div key={pt.id} className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col sm:flex-row justify-between gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-bold text-lg">Pickup: {pt.facility_name || 'N/A'}</h3>
+                  <p className="text-gray-700 font-medium">Dropoff: {pt.destination_name || 'N/A'}</p>
+                  <div className="flex gap-4 text-sm text-gray-500">
+                    <span>Distance: {pt.distance ? `${pt.distance} mi` : 'N/A'}</span>
+                    <span>Duration: {pt.duration || 'N/A'}</span>
+                    <span className="font-semibold text-green-700">Payout: ${pt.payout || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <ClaimTripButton tripId={pt.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
     );
   }
@@ -117,7 +152,7 @@ export default async function Home() {
   let ctaHref = '';
 
   if (!hasArrival) {
-    stateText = 'Arrival Pending';
+    stateText = trip.status === 'claimed' ? 'Trip Claimed - Arrival Pending' : 'Arrival Pending';
     ctaText = 'Start Arrival';
     ctaHref = '/events/arrival';
   } else if (!hasCheckin) {
