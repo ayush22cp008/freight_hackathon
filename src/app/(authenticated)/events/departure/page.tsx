@@ -29,7 +29,8 @@ export default async function DeparturePage() {
     .from('trips')
     .select('id, facility_name')
     .eq('driver_id', driverId)
-    .eq('status', 'active')
+    .in('status', ['active', 'claimed', 'in_progress'])
+    .limit(1)
     .single();
 
   if (!trip) {

@@ -24,11 +24,26 @@ export async function POST(request: Request) {
     const driverId = driver.id;
 
     const body = await request.json();
-    const { trip_id, latitude, longitude, gps_accuracy, server_timestamp, photo_url } = body;
+    const { latitude, longitude, gps_accuracy, server_timestamp, photo_url } = body;
 
-    if (!trip_id || !latitude || !longitude || !server_timestamp || !photo_url) {
+    if (!latitude || !longitude || !server_timestamp || !photo_url) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Resolve active trip securely from the server
+    const { data: activeTrip } = await supabaseServer
+      .from('trips')
+      .select('id')
+      .eq('driver_id', driverId)
+      .in('status', ['active', 'claimed', 'in_progress'])
+      .limit(1)
+      .single();
+
+    if (!activeTrip) {
+      return NextResponse.json({ error: 'No active trip found for driver' }, { status: 403 });
+    }
+
+    const trip_id = activeTrip.id;
 
     const { data, error } = await supabaseServer
       .from('events')
