@@ -11,10 +11,9 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
     
-    // We construct the callback URL so that Supabase directs the user to our confirm API
-    // request.url is something like http://localhost:3000/api/auth/forgot-password
+    // We point directly to the update-password page for Option B
     const requestUrl = new URL(request.url);
-    const callbackUrl = `${requestUrl.origin}/api/auth/confirm?next=/update-password`;
+    const callbackUrl = `${requestUrl.origin}/update-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: callbackUrl,
