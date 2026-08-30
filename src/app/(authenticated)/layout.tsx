@@ -18,14 +18,23 @@ export default async function AuthenticatedLayout({
   const identity = await getFreightIdentity();
 
   if (!identity) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <p className="text-gray-500">Identity not found. Please contact support.</p>
-      </div>
-    );
+    // Check for reviewer authorization
+    const { data: reviewerAuth } = await supabase
+      .from('reviewer_authorizations')
+      .select('auth_id')
+      .eq('auth_id', data.user.id)
+      .single();
+
+    if (!reviewerAuth) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+          <p className="text-gray-500">Identity not found. Please contact support.</p>
+        </div>
+      );
+    }
   }
 
-  if (identity.verification_status === 'REJECTED') {
+  if (identity && identity.verification_status === 'REJECTED') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navbar userEmail={data.user.email} />

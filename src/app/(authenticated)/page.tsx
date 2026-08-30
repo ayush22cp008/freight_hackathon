@@ -14,7 +14,21 @@ export default async function Home() {
 
   const identity = await getFreightIdentity();
 
-  if (!identity || identity.verification_status !== 'VERIFIED') {
+  if (!identity) {
+    const { data: reviewerAuth } = await supabaseServer
+      .from('reviewer_authorizations')
+      .select('auth_id')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (reviewerAuth) {
+      redirect('/reviewer/queue');
+    }
+    
+    redirect('/onboarding');
+  }
+
+  if (identity.verification_status !== 'VERIFIED') {
     redirect('/onboarding');
   }
 
