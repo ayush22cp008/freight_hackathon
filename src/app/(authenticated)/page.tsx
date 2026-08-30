@@ -12,19 +12,22 @@ export default async function Home() {
     redirect('/login');
   }
 
+  // Reviewer authorization takes priority over driver/company identity.
+  // A reviewer may also have a driver/company identity, so this check must
+  // happen before getFreightIdentity() routing.
+  const { data: reviewerAuth } = await supabaseServer
+    .from('reviewer_authorizations')
+    .select('auth_id')
+    .eq('auth_id', user.id)
+    .single();
+
+  if (reviewerAuth) {
+    redirect('/reviewer/queue');
+  }
+
   const identity = await getFreightIdentity();
 
   if (!identity) {
-    const { data: reviewerAuth } = await supabaseServer
-      .from('reviewer_authorizations')
-      .select('auth_id')
-      .eq('auth_id', user.id)
-      .single();
-
-    if (reviewerAuth) {
-      redirect('/reviewer/queue');
-    }
-    
     redirect('/onboarding');
   }
 
@@ -49,7 +52,7 @@ export default async function Home() {
             This is the verified company portal. From here you can manage your fleet, drivers, and trips.
           </p>
           <div className="pt-4 border-t border-gray-100">
-            <Link 
+            <Link
               href="/company/trips/create"
               className="inline-block bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
             >
@@ -104,7 +107,7 @@ export default async function Home() {
     .eq('trip_id', trip.id);
 
   const eventTypes = events?.map(e => e.event_type) || [];
-  
+
   const hasArrival = eventTypes.includes('arrival');
   const hasCheckin = eventTypes.includes('checkin');
   const hasDeparture = eventTypes.includes('departure');
@@ -134,15 +137,15 @@ export default async function Home() {
   return (
     <main className="p-8 max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Active Trip: {trip.facility_name}</h1>
-      
+
       <div className="bg-white p-6 rounded-lg shadow space-y-4 border border-gray-200">
         <div>
           <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Current Status</p>
           <p className="text-lg font-medium text-gray-900">{stateText}</p>
         </div>
-        
+
         <div className="pt-4 border-t border-gray-100">
-          <Link 
+          <Link
             href={ctaHref}
             className="block w-full text-center bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
           >
