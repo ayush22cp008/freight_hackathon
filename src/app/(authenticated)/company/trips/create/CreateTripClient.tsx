@@ -115,15 +115,15 @@ export default function CreateTripClient() {
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Pickup Facility</label>
-            <input required type="text" name="facility_name" value={formData.facility_name} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="e.g. Warehouse A" />
+            <input required type="text" name="facility_name" value={formData.facility_name} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900 placeholder:text-gray-400" placeholder="e.g. Warehouse A" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Destination Facility</label>
-            <input required type="text" name="destination_name" value={formData.destination_name} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="e.g. Distribution Center B" />
+            <input required type="text" name="destination_name" value={formData.destination_name} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900 placeholder:text-gray-400" placeholder="e.g. Distribution Center B" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Receiving Company</label>
-            <select required name="receiving_company_id" value={formData.receiving_company_id} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+            <select required name="receiving_company_id" value={formData.receiving_company_id} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900">
               <option value="">Select a company...</option>
               {!loadingCompanies && companies.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -133,16 +133,16 @@ export default function CreateTripClient() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Distance (miles)</label>
-              <input required type="number" step="0.1" name="distance" value={formData.distance} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" />
+              <input required type="number" step="0.1" name="distance" value={formData.distance} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900 placeholder:text-gray-400" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Duration (e.g. 2 days)</label>
-              <input required type="text" name="duration" value={formData.duration} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" />
+              <input required type="text" name="duration" value={formData.duration} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900 placeholder:text-gray-400" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Payout Offer ($)</label>
-            <input required type="number" step="1" name="payout" value={formData.payout} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" />
+            <input required type="number" step="1" name="payout" value={formData.payout} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border text-gray-900 placeholder:text-gray-400" />
           </div>
           <div className="pt-4">
             <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 disabled:opacity-50">
