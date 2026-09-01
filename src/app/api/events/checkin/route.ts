@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { latitude, longitude, gps_accuracy, server_timestamp, photo_url } = body;
 
-    if (!latitude || !longitude || !server_timestamp || !photo_url) {
+    if (!latitude || !longitude || !server_timestamp) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
