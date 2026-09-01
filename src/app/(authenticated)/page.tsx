@@ -196,6 +196,7 @@ export default async function Home() {
   const hasArrivedAtDelivery = eventTypes.includes('ARRIVED_AT_DELIVERY');
   const hasReceiverCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
   const hasGoodsUnloaded = eventTypes.includes('GOODS_UNLOADED');
+  const hasDeliveryDeparted = eventTypes.includes('DELIVERY_DEPARTED');
 
   let stateText = '';
   let ctaText = '';
@@ -233,8 +234,12 @@ export default async function Home() {
     stateText = 'Receiver Checked In';
     ctaText = 'Record Goods Unloaded';
     ctaHref = '/events/goods-unloaded';
-  } else {
+  } else if (!hasDeliveryDeparted) {
     stateText = 'Goods Unloaded';
+    ctaText = 'Record Delivery Departed';
+    ctaHref = '/events/delivery-departed';
+  } else {
+    stateText = 'Delivery Departed';
     ctaText = 'View Timeline';
     ctaHref = '/timeline';
   }
