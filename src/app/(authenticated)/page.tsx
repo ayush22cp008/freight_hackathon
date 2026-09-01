@@ -166,8 +166,8 @@ export default async function Home() {
     ctaHref = '/events/load';
   } else if (!hasDeparture) {
     stateText = 'Goods Loaded';
-    ctaText = 'Start Departure';
-    ctaHref = '/events/departure';
+    ctaText = 'Start Pickup Departure';
+    ctaHref = '/events/pickup-departed';
   } else {
     stateText = 'Trip Complete';
     ctaText = 'View Timeline';
