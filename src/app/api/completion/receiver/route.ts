@@ -62,22 +62,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Cannot confirm receipt before delivery departed is recorded' }, { status: 400 });
     }
 
-    // Call the atomic RPC
-    const { data, error } = await supabaseServer.rpc('confirm_delivery', {
-      p_trip_id: trip_id,
-      p_role: 'COMPANY'
-    });
+    // 1. Atomically record the receiver's confirmation if not already set
+    const { error: updateError } = await supabaseServer
+      .from('trips')
+      .update({ receiver_delivery_confirmed_at: new Date().toISOString() })
+      .eq('id', trip_id)
+      .is('receiver_delivery_confirmed_at', null);
 
-    if (error) {
-      console.error('RPC error:', error);
+    if (updateError) {
+      console.error('Failed to set receiver confirmation:', updateError);
       return NextResponse.json({ error: 'Failed to confirm receipt' }, { status: 500 });
     }
 
-    if (data && data.success === false) {
-      return NextResponse.json({ error: data.error }, { status: 400 });
+    // 2. Atomically attempt to complete the trip IF both confirmations exist
+    const { error: completionError } = await supabaseServer
+      .from('trips')
+      .update({ status: 'completed' })
+      .eq('id', trip_id)
+      .not('driver_completion_confirmed_at', 'is', null)
+      .not('receiver_delivery_confirmed_at', 'is', null);
+
+    if (completionError) {
+      console.error('Failed to complete trip:', completionError);
+      return NextResponse.json({ error: 'Failed to confirm receipt' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, state: data });
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error('API Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
