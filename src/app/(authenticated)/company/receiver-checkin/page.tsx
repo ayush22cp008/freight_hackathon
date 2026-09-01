@@ -7,8 +7,9 @@ import ReceiverCheckinClient from './ReceiverCheckinClient';
 export default async function ReceiverCheckinPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -31,7 +32,7 @@ export default async function ReceiverCheckinPage({
     redirect('/');
   }
 
-  const tripId = typeof searchParams.tripId === 'string' ? searchParams.tripId : undefined;
+  const tripId = typeof params.tripId === 'string' ? params.tripId : undefined;
 
   if (!tripId) {
     return (
