@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       .from('trips')
       .select('id')
       .eq('driver_id', driver.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'claimed', 'in_progress', 'completed'])
       .single();
 
     if (!trip) {
