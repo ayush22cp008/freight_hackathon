@@ -143,9 +143,10 @@ export default async function Home() {
 
   const eventTypes = events?.map(e => e.event_type) || [];
 
-  const hasArrival = eventTypes.includes('arrival');
-  const hasCheckin = eventTypes.includes('checkin');
-  const hasDeparture = eventTypes.includes('departure');
+  const hasArrival = eventTypes.includes('arrival') || eventTypes.includes('ARRIVED_AT_PICKUP');
+  const hasCheckin = eventTypes.includes('checkin') || eventTypes.includes('PICKUP_CHECKED_IN');
+  const hasLoad = eventTypes.includes('GOODS_LOADED');
+  const hasDeparture = eventTypes.includes('departure') || eventTypes.includes('PICKUP_DEPARTED');
 
   let stateText = '';
   let ctaText = '';
@@ -159,8 +160,12 @@ export default async function Home() {
     stateText = 'Arrival Complete';
     ctaText = 'Start Check-in';
     ctaHref = '/events/checkin';
-  } else if (!hasDeparture) {
+  } else if (!hasLoad) {
     stateText = 'Check-in Complete';
+    ctaText = 'Record Goods Loaded';
+    ctaHref = '/events/load';
+  } else if (!hasDeparture) {
+    stateText = 'Goods Loaded';
     ctaText = 'Start Departure';
     ctaHref = '/events/departure';
   } else {
