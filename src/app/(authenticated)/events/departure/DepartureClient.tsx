@@ -28,7 +28,7 @@ export default function DepartureClient({ tripId, facilityName }: { tripId: stri
       const time = await getServerTime();
       
       // 3. Upload Photo
-      const photoUrl = await uploadPhoto(photoFile);
+      const photoUrl = await uploadPhoto(photoFile, tripId);
 
       // 4. Submit to API
       const res = await fetch('/api/events/departure', {

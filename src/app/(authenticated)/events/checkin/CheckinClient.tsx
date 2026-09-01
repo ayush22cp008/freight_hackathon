@@ -26,7 +26,7 @@ export default function CheckinClient({ tripId, facilityName }: { tripId: string
       const time = await getServerTime();
       
       // 3. Upload Photo (Optional)
-      const photoUrl = photoFile ? await uploadPhoto(photoFile) : null;
+      const photoUrl = photoFile ? await uploadPhoto(photoFile, tripId) : null;
 
       // 4. Submit to API
       const res = await fetch('/api/events/checkin', {

@@ -47,7 +47,7 @@ export default function TestDay2Page() {
     setUploading(true);
 
     try {
-      const url = await uploadPhoto(file);
+      const url = await uploadPhoto(file, 'test-trip-id');
       setPhotoUrl(url);
     } catch (err: any) {
       setUploadError(err.message);
