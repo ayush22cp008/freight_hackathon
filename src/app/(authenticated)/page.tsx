@@ -148,6 +148,7 @@ export default async function Home() {
   const hasLoad = eventTypes.includes('GOODS_LOADED');
   const hasDeparture = eventTypes.includes('departure') || eventTypes.includes('PICKUP_DEPARTED');
   const hasInTransit = eventTypes.includes('IN_TRANSIT');
+  const hasArrivedAtDelivery = eventTypes.includes('ARRIVED_AT_DELIVERY');
 
   let stateText = '';
   let ctaText = '';
@@ -173,8 +174,12 @@ export default async function Home() {
     stateText = 'Pickup Departed';
     ctaText = 'Record In-Transit';
     ctaHref = '/events/in-transit';
-  } else {
+  } else if (!hasArrivedAtDelivery) {
     stateText = 'In Transit';
+    ctaText = 'Record Arrival at Delivery';
+    ctaHref = '/events/arrived-at-delivery';
+  } else {
+    stateText = 'Arrived at Delivery';
     ctaText = 'View Timeline';
     ctaHref = '/timeline';
   }
