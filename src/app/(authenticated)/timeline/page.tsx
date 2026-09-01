@@ -28,7 +28,7 @@ export default async function TimelinePage() {
     .from('trips')
     .select('id, facility_name')
     .eq('driver_id', driver.id)
-    .eq('status', 'active')
+    .in('status', ['active', 'claimed', 'in_progress', 'completed'])
     .single();
 
   if (!trip) {
