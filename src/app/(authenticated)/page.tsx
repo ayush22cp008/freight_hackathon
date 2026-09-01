@@ -56,41 +56,62 @@ export default async function Home() {
         facility_name, 
         destination_name, 
         status, 
+        receiver_delivery_confirmed_at,
         events ( event_type )
       `)
       .eq('receiving_company_id', company.id)
       .in('status', ['active', 'claimed', 'in_progress']);
 
-    const tripsNeedingCheckin = incomingTrips?.filter(trip => {
-      const eventTypes = trip.events.map((e: any) => e.event_type);
-      return eventTypes.includes('ARRIVED_AT_DELIVERY') && !eventTypes.includes('RECEIVER_CHECKED_IN');
-    }) || [];
-
     return (
       <main className="p-8 max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Company Dashboard</h1>
-        
-        {tripsNeedingCheckin.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg shadow-sm mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-yellow-800">Action Required: Incoming Deliveries</h2>
-            <div className="space-y-4">
-              {tripsNeedingCheckin.map(trip => (
-                <div key={trip.id} className="bg-white p-4 rounded border border-yellow-100 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{trip.facility_name} → {trip.destination_name}</h3>
-                    <p className="text-sm text-gray-600">The driver has arrived at the destination. Please check in the receiver.</p>
+                {incomingTrips?.length === 0 ? (
+                  <p className="text-gray-500">No incoming deliveries at this time.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {incomingTrips?.map(trip => {
+                      const eventTypes = trip.events.map((e: any) => e.event_type);
+                      const hasArrived = eventTypes.includes('ARRIVED_AT_DELIVERY');
+                      const hasCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
+                      const hasDeparted = eventTypes.includes('DELIVERY_DEPARTED');
+                      
+                      let cta = null;
+                      let statusText = 'In Transit';
+
+                      if (trip.status === 'completed') {
+                        statusText = 'Completed';
+                      } else if (!hasCheckedIn && hasArrived) {
+                        statusText = 'Arrived - Action Required';
+                        cta = (
+                          <Link href={`/company/receiver-checkin?tripId=${trip.id}`} className="text-blue-600 hover:underline font-medium text-sm">
+                            Complete Receiver Check-in →
+                          </Link>
+                        );
+                      } else if (hasCheckedIn && !hasDeparted) {
+                        statusText = 'Driver is Unloading';
+                      } else if (hasDeparted && !trip.receiver_delivery_confirmed_at) {
+                        statusText = 'Action Required';
+                        cta = (
+                          <Link href={`/company/completion?tripId=${trip.id}`} className="text-blue-600 hover:underline font-medium text-sm">
+                            Confirm Delivery Received →
+                          </Link>
+                        );
+                      } else if (trip.receiver_delivery_confirmed_at) {
+                        statusText = 'Waiting for Driver Confirmation';
+                      }
+
+                      return (
+                        <div key={trip.id} className="border border-gray-200 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
+                          <div>
+                            <div className="font-medium text-gray-900">{trip.facility_name || 'Incoming Trip'}</div>
+                            <div className="text-sm text-gray-500">Status: {statusText}</div>
+                          </div>
+                          {cta && <div className="mt-2 sm:mt-0">{cta}</div>}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <Link
-                    href={`/company/receiver-checkin?tripId=${trip.id}`}
-                    className="bg-yellow-600 text-white px-4 py-2 rounded font-medium hover:bg-yellow-700 transition"
-                  >
-                    Check In Receiver
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                )}
 
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
@@ -132,7 +153,7 @@ export default async function Home() {
   // Get active trip
   const { data: trip } = await supabaseServer
     .from('trips')
-    .select('id, facility_name, status')
+    .select('id, facility_name, status, driver_completion_confirmed_at')
     .eq('driver_id', driverId)
     .in('status', ['active', 'claimed', 'in_progress'])
     .limit(1)
@@ -238,8 +259,16 @@ export default async function Home() {
     stateText = 'Goods Unloaded';
     ctaText = 'Record Delivery Departed';
     ctaHref = '/events/delivery-departed';
-  } else {
+  } else if (trip.status === 'completed') {
+    stateText = 'Completed';
+    ctaText = 'View Timeline';
+    ctaHref = '/timeline';
+  } else if (!trip.driver_completion_confirmed_at) {
     stateText = 'Delivery Departed';
+    ctaText = 'Confirm Delivery Completion';
+    ctaHref = '/completion/driver';
+  } else {
+    stateText = 'Waiting for Receiver Confirmation';
     ctaText = 'View Timeline';
     ctaHref = '/timeline';
   }
