@@ -40,13 +40,58 @@ export default async function Home() {
     // Show Company Dashboard
     const { data: company } = await supabaseServer
       .from('companies')
-      .select('name')
+      .select('id, name')
       .eq('auth_id', user.id)
       .single();
+
+    if (!company) {
+      redirect('/onboarding');
+    }
+
+    // Fetch incoming trips for receiver check-in
+    const { data: incomingTrips } = await supabaseServer
+      .from('trips')
+      .select(`
+        id, 
+        facility_name, 
+        destination_name, 
+        status, 
+        events ( event_type )
+      `)
+      .eq('receiving_company_id', company.id)
+      .in('status', ['active', 'claimed', 'in_progress']);
+
+    const tripsNeedingCheckin = incomingTrips?.filter(trip => {
+      const eventTypes = trip.events.map((e: any) => e.event_type);
+      return eventTypes.includes('ARRIVED_AT_DELIVERY') && !eventTypes.includes('RECEIVER_CHECKED_IN');
+    }) || [];
 
     return (
       <main className="p-8 max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Company Dashboard</h1>
+        
+        {tripsNeedingCheckin.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg shadow-sm mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-yellow-800">Action Required: Incoming Deliveries</h2>
+            <div className="space-y-4">
+              {tripsNeedingCheckin.map(trip => (
+                <div key={trip.id} className="bg-white p-4 rounded border border-yellow-100 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{trip.facility_name} → {trip.destination_name}</h3>
+                    <p className="text-sm text-gray-600">The driver has arrived at the destination. Please check in the receiver.</p>
+                  </div>
+                  <Link
+                    href={`/company/receiver-checkin?tripId=${trip.id}`}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded font-medium hover:bg-yellow-700 transition"
+                  >
+                    Check In Receiver
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
           <p className="text-gray-600 mb-6">
