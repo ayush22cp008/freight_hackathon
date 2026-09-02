@@ -159,6 +159,48 @@ export default async function Home() {
     .limit(1)
     .single();
 
+  // Get completed historical trips
+  const { data: completedTrips } = await supabaseServer
+    .from('trips')
+    .select('id, facility_name, destination_name, distance, duration, payout')
+    .eq('driver_id', driverId)
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const completedTripsSection = (
+    <div className="mt-8 pt-8 border-t border-gray-200">
+      <h2 className="text-xl font-semibold mb-4">Past / Completed Trips</h2>
+      {!completedTrips || completedTrips.length === 0 ? (
+        <p className="text-gray-500 bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">No completed trips yet.</p>
+      ) : (
+        <div className="grid gap-4">
+          {completedTrips.map((ct) => (
+            <div key={ct.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="font-semibold text-gray-900">Pickup: {ct.facility_name || 'N/A'}</h3>
+                <p className="text-gray-700 text-sm font-medium">Dropoff: {ct.destination_name || 'N/A'}</p>
+                <div className="flex gap-4 text-xs text-gray-500 mt-2">
+                  <span>Distance: {ct.distance ? `${ct.distance} mi` : 'N/A'}</span>
+                  <span>Duration: {ct.duration || 'N/A'}</span>
+                  <span className="font-semibold text-green-700">Payout: ${ct.payout || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <Link
+                  href={`/timeline?tripId=${ct.id}`}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md font-medium transition-colors"
+                >
+                  View Timeline
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   if (!trip) {
     // If no active trip, fetch published trips available for claim
     const { data: publishedTrips } = await supabaseServer
@@ -197,6 +239,8 @@ export default async function Home() {
             ))}
           </div>
         )}
+
+        {completedTripsSection}
       </main>
     );
   }
@@ -292,6 +336,8 @@ export default async function Home() {
           </Link>
         </div>
       </div>
+
+      {completedTripsSection}
     </main>
   );
 }
