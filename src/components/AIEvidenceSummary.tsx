@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function AIEvidenceSummary() {
+export default function AIEvidenceSummary({ tripId }: { tripId?: string }) {
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +13,9 @@ export default function AIEvidenceSummary() {
     setSummary(null);
 
     try {
-      const res = await fetch('/api/summary', { method: 'POST' });
+      const body = tripId ? JSON.stringify({ tripId }) : undefined;
+      const headers = tripId ? { 'Content-Type': 'application/json' } : undefined;
+      const res = await fetch('/api/summary', { method: 'POST', headers, body });
       const data = await res.json();
       
       if (!res.ok) {

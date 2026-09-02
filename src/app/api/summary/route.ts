@@ -51,12 +51,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Driver profile not found' }, { status: 401 });
     }
 
-    const { data: trip } = await supabaseServer
+    const { tripId } = await request.json().catch(() => ({}));
+
+    let query = supabaseServer
       .from('trips')
       .select('id')
       .eq('driver_id', driver.id)
-      .in('status', ['active', 'claimed', 'in_progress', 'completed'])
-      .single();
+      .in('status', ['active', 'claimed', 'in_progress', 'completed']);
+      
+    if (tripId) {
+      query = query.eq('id', tripId);
+    } else {
+      query = query.order('created_at', { ascending: false }).limit(1);
+    }
+
+    const { data: trip } = await query.single();
 
     if (!trip) {
       return NextResponse.json({ error: 'No active trip found.' }, { status: 400 });
@@ -73,7 +82,11 @@ export async function POST(request: Request) {
     }
 
     const eventTypes = events.map(e => e.event_type);
-    if (!eventTypes.includes('arrival') || !eventTypes.includes('checkin') || !eventTypes.includes('departure')) {
+    
+    const hasLegacy = eventTypes.includes('arrival') && eventTypes.includes('checkin') && eventTypes.includes('departure');
+    const hasCanonical = eventTypes.includes('ARRIVED_AT_PICKUP') && eventTypes.includes('PICKUP_CHECKED_IN') && eventTypes.includes('PICKUP_DEPARTED');
+    
+    if (!hasLegacy && !hasCanonical) {
       return NextResponse.json({ error: 'Evidence summary requires the completed event sequence (Arrival, Check-in, Departure).' }, { status: 400 });
     }
 

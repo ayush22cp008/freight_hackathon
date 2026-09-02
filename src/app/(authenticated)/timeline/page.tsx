@@ -119,7 +119,7 @@ export default async function TimelinePage({ searchParams }: Props) {
             </div>
           ))}
           
-          <AIEvidenceSummary />
+          <AIEvidenceSummary tripId={trip.id} />
         </div>
       )}
     </div>
