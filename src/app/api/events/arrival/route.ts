@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       .insert({
         trip_id,
         driver_id: driverId,
-        event_type: 'arrival',
+        event_type: 'ARRIVED_AT_PICKUP',
         latitude,
         longitude,
         gps_accuracy,

@@ -83,10 +83,11 @@ export async function POST(request: Request) {
 
     const eventTypes = events.map(e => e.event_type);
     
-    const hasLegacy = eventTypes.includes('arrival') && eventTypes.includes('checkin') && eventTypes.includes('departure');
-    const hasCanonical = eventTypes.includes('ARRIVED_AT_PICKUP') && eventTypes.includes('PICKUP_CHECKED_IN') && eventTypes.includes('PICKUP_DEPARTED');
+    const hasArrival = eventTypes.includes('arrival') || eventTypes.includes('ARRIVED_AT_PICKUP');
+    const hasCheckin = eventTypes.includes('checkin') || eventTypes.includes('PICKUP_CHECKED_IN');
+    const hasDeparture = eventTypes.includes('departure') || eventTypes.includes('PICKUP_DEPARTED') || eventTypes.includes('DELIVERY_DEPARTED');
     
-    if (!hasLegacy && !hasCanonical) {
+    if (!hasArrival || !hasCheckin || !hasDeparture) {
       return NextResponse.json({ error: 'Evidence summary requires the completed event sequence (Arrival, Check-in, Departure).' }, { status: 400 });
     }
 

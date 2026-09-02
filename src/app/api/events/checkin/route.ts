@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       .insert({
         trip_id,
         driver_id: driverId,
-        event_type: 'checkin',
+        event_type: 'PICKUP_CHECKED_IN',
         latitude,
         longitude,
         gps_accuracy,
