@@ -4,7 +4,11 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import AIEvidenceSummary from '@/components/AIEvidenceSummary';
 
-export default async function TimelinePage() {
+type Props = {
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+export default async function TimelinePage({ searchParams }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -23,13 +27,22 @@ export default async function TimelinePage() {
     redirect('/');
   }
 
-  // Get active trip for this driver
-  const { data: trip } = await supabaseServer
+  const tripId = searchParams?.tripId;
+
+  let query = supabaseServer
     .from('trips')
     .select('id, facility_name')
     .eq('driver_id', driver.id)
-    .in('status', ['active', 'claimed', 'in_progress', 'completed'])
-    .single();
+    .in('status', ['active', 'claimed', 'in_progress', 'completed']);
+
+  if (typeof tripId === 'string') {
+    query = query.eq('id', tripId);
+  } else {
+    // If no specific trip is requested, get the most recent active/claimed/in_progress/completed trip
+    query = query.order('created_at', { ascending: false }).limit(1);
+  }
+
+  const { data: trip } = await query.single();
 
   if (!trip) {
     return (
