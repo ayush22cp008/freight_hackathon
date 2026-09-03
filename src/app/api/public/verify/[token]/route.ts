@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { hashToken, checkAnonymousRateLimit } from '@/lib/public-share';
+import { generateSummaryForEvents } from '@/lib/summary';
 import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -68,30 +69,34 @@ export async function GET(
     // Fetch chronological timeline events
     const { data: events, error: eventsErr } = await supabaseServer
       .from('events')
-      .select('event_type, location_name, timestamp')
+      .select('*')
       .eq('trip_id', tripId)
-      .in('event_type', ['DELIVERY_ARRIVED', 'DELIVERY_CHECKIN', 'DELIVERY_DEPARTED'])
       .order('timestamp', { ascending: true });
 
+    // Filter key events for the timeline display
+    const keyEvents = (events || []).filter(e => 
+      ['DELIVERY_ARRIVED', 'DELIVERY_CHECKIN', 'DELIVERY_DEPARTED'].includes(e.event_type)
+    );
+
     // Check evidence completeness (Arrival, Checkin, Departure all present)
-    const hasArrival = events?.some(e => e.event_type === 'DELIVERY_ARRIVED');
-    const hasCheckin = events?.some(e => e.event_type === 'DELIVERY_CHECKIN');
-    const hasDeparture = events?.some(e => e.event_type === 'DELIVERY_DEPARTED');
+    const hasArrival = keyEvents.some(e => e.event_type === 'DELIVERY_ARRIVED');
+    const hasCheckin = keyEvents.some(e => e.event_type === 'DELIVERY_CHECKIN');
+    const hasDeparture = keyEvents.some(e => e.event_type === 'DELIVERY_DEPARTED');
     
     const evidenceState = (hasArrival && hasCheckin && hasDeparture) ? 'COMPLETE' : 'INCOMPLETE';
-    const departureEvent = events?.find(e => e.event_type === 'DELIVERY_DEPARTED');
+    const departureEvent = keyEvents.find(e => e.event_type === 'DELIVERY_DEPARTED');
     const deliveryDate = departureEvent?.timestamp || null;
 
-    // Optional AI summary (we can mock or leave as UNAVAILABLE if no AI configured for Phase 1a yet,
-    // or fetch from an existing table. In this hackathon, we fetch from a 'trip_summaries' if it exists,
-    // otherwise fallback).
-    const { data: summaryData } = await supabaseServer
-      .from('trip_summaries')
-      .select('summary')
-      .eq('trip_id', tripId)
-      .single();
-
-    const aiSummary = summaryData ? summaryData.summary : "AI summary unavailable.";
+    // Authoritative AI summary generation
+    let aiSummary = "AI summary unavailable.";
+    try {
+      if (evidenceState === 'COMPLETE' && events && events.length > 0) {
+        aiSummary = await generateSummaryForEvents(events);
+      }
+    } catch (e) {
+      console.error('AI summary generation failed (fallback to unavailable):', e);
+      // Fallback gracefully without breaking public verify
+    }
 
     // 5. Produce strict public projection
     const publicProjection = {
@@ -112,7 +117,7 @@ export async function GET(
           departureRecorded: !!hasDeparture
         }
       },
-      timeline: (events || []).map(e => ({
+      timeline: keyEvents.map(e => ({
         type: e.event_type,
         timestamp: e.timestamp,
         location: e.location_name || 'Location recorded'
