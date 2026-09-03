@@ -6,10 +6,10 @@ import { generateSecureToken, hashToken } from '@/lib/public-share';
 // POST: Create or replace a public share for a trip
 export async function POST(
   request: Request,
-  { params }: { params: { tripId: string } }
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const supabase = await createClient();
     
     // 1. Authenticate user
@@ -97,10 +97,10 @@ export async function POST(
 // DELETE: Revoke a public share
 export async function DELETE(
   request: Request,
-  { params }: { params: { tripId: string } }
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
-    const tripId = params.tripId;
+    const { tripId } = await params;
     const supabase = await createClient();
     
     // 1. Authenticate user
