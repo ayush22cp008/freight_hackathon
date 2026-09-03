@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getFreightIdentity } from '@/lib/auth';
 import Link from 'next/link';
 import ClaimTripButton from './ClaimTripButton';
+import PublicShareManager from './company/PublicShareManager';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -62,6 +63,21 @@ export default async function Home() {
       .eq('receiving_company_id', company.id)
       .in('status', ['active', 'claimed', 'in_progress']);
 
+    // Fetch completed trips for public sharing
+    const { data: companyCompletedTrips } = await supabaseServer
+      .from('trips')
+      .select(`
+        id, 
+        facility_name, 
+        destination_name, 
+        status, 
+        trip_public_shares ( status )
+      `)
+      .eq('receiving_company_id', company.id)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
     return (
       <main className="p-8 max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Company Dashboard</h1>
@@ -113,7 +129,33 @@ export default async function Home() {
                   </div>
                 )}
 
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+        <h2 className="text-xl font-semibold mt-8 mb-4">Completed Deliveries</h2>
+        {!companyCompletedTrips || companyCompletedTrips.length === 0 ? (
+          <p className="text-gray-500 bg-white p-6 rounded-lg border border-gray-200">No completed deliveries yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {companyCompletedTrips.map(trip => {
+              const activeShares = trip.trip_public_shares?.filter((s: any) => s.status === 'ACTIVE') || [];
+              const hasActiveShare = activeShares.length > 0;
+              return (
+                <div key={trip.id} className="border border-gray-200 bg-white rounded p-4 flex flex-col">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-medium text-gray-900">{trip.facility_name || 'Trip'}</div>
+                      <div className="text-sm text-gray-500">To: {trip.destination_name || 'N/A'}</div>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Completed
+                    </span>
+                  </div>
+                  <PublicShareManager tripId={trip.id} hasActiveShare={hasActiveShare} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mt-8">
           <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
           <p className="text-gray-600 mb-6">
             This is the verified company portal. From here you can manage your fleet, drivers, and trips.
