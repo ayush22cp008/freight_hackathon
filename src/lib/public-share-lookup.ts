@@ -31,14 +31,19 @@ export async function getPublicVerificationData(token: string) {
     .from('trips')
     .select(`
       status,
-      pickup_city,
-      destination_city,
+      facility_name,
+      destination_name,
       receiving_company_id
     `)
     .eq('id', tripId)
     .single();
 
-  if (tripErr || !tripData) {
+  if (tripErr) {
+    console.error("Database error querying trips:", tripErr);
+    return null;
+  }
+  
+  if (!tripData) {
     return null;
   }
 
@@ -88,8 +93,8 @@ export async function getPublicVerificationData(token: string) {
     trip: {
       status: tripData.status,
       deliveryDate: deliveryDate,
-      pickupCity: tripData.pickup_city || 'Not specified',
-      destinationCity: tripData.destination_city || 'Not specified'
+      pickupCity: tripData.facility_name || 'Not specified',
+      destinationCity: tripData.destination_name || 'Not specified'
     },
     evidence: {
       state: evidenceState,
