@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getPublicVerificationData } from '@/lib/public-share-lookup';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,27 +13,16 @@ export const metadata: Metadata = {
   },
 };
 
-async function getVerificationData(token: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
-  try {
-    const res = await fetch(`${baseUrl}/api/public/verify/${token}`, {
-      cache: 'no-store',
-    });
-    
-    if (!res.ok) {
-      return null;
-    }
-    
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
-}
-
 export default async function PublicSharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const data = await getVerificationData(token);
+  
+  let data;
+  try {
+    data = await getPublicVerificationData(token);
+  } catch (err) {
+    console.error('Verification data fetch error:', err);
+    throw err; // Let Next.js standard error boundary handle unexpected server errors
+  }
 
   if (!data) {
     // Generic unavailable state for invalid/revoked/malformed/nonexistent
