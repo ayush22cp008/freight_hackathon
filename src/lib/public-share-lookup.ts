@@ -58,21 +58,26 @@ export async function getPublicVerificationData(token: string) {
     .from('events')
     .select('*')
     .eq('trip_id', tripId)
-    .order('timestamp', { ascending: true });
+    .order('server_timestamp', { ascending: true });
+
+  if (eventsErr) {
+    console.error("Database error querying events:", eventsErr);
+    return null;
+  }
 
   // Filter key events for the timeline display
   const keyEvents = (events || []).filter(e => 
-    ['DELIVERY_ARRIVED', 'DELIVERY_CHECKIN', 'DELIVERY_DEPARTED'].includes(e.event_type)
+    ['ARRIVED_AT_DELIVERY', 'RECEIVER_CHECKED_IN', 'DELIVERY_DEPARTED'].includes(e.event_type)
   );
 
   // Check evidence completeness (Arrival, Checkin, Departure all present)
-  const hasArrival = keyEvents.some(e => e.event_type === 'DELIVERY_ARRIVED');
-  const hasCheckin = keyEvents.some(e => e.event_type === 'DELIVERY_CHECKIN');
+  const hasArrival = keyEvents.some(e => e.event_type === 'ARRIVED_AT_DELIVERY');
+  const hasCheckin = keyEvents.some(e => e.event_type === 'RECEIVER_CHECKED_IN');
   const hasDeparture = keyEvents.some(e => e.event_type === 'DELIVERY_DEPARTED');
   
   const evidenceState = (hasArrival && hasCheckin && hasDeparture) ? 'COMPLETE' : 'INCOMPLETE';
   const departureEvent = keyEvents.find(e => e.event_type === 'DELIVERY_DEPARTED');
-  const deliveryDate = departureEvent?.timestamp || null;
+  const deliveryDate = departureEvent?.server_timestamp || null;
 
   // Authoritative AI summary generation
   let aiSummary = "AI summary unavailable.";
@@ -106,8 +111,8 @@ export async function getPublicVerificationData(token: string) {
     },
     timeline: keyEvents.map(e => ({
       type: e.event_type,
-      timestamp: e.timestamp,
-      location: e.location_name || 'Location recorded'
+      timestamp: e.server_timestamp,
+      location: 'Location recorded'
     })),
     aiSummary: aiSummary,
     isPublicVerification: true
