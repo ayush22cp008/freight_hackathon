@@ -30,8 +30,9 @@ async function getVerificationData(token: string) {
   }
 }
 
-export default async function PublicSharePage({ params }: { params: { token: string } }) {
-  const data = await getVerificationData(params.token);
+export default async function PublicSharePage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const data = await getVerificationData(token);
 
   if (!data) {
     // Generic unavailable state for invalid/revoked/malformed/nonexistent
