@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar({ userEmail }: { userEmail?: string }) {
+export default function Navbar({ userEmail, role }: { userEmail?: string; role?: 'DRIVER' | 'COMPANY' | 'REVIEWER' | null }) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -21,12 +21,34 @@ export default function Navbar({ userEmail }: { userEmail?: string }) {
               <span className="text-xl font-bold text-blue-600">Freight</span>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Dashboard
-              </Link>
-              <Link href="/timeline" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Timeline
-              </Link>
+              {role === 'DRIVER' ? (
+                <>
+                  <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Dashboard
+                  </Link>
+                  <Link href="/driver/available" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Available Trips
+                  </Link>
+                  <Link href="/driver/active" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    My Active Trip
+                  </Link>
+                  <Link href="/driver/history" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Completed Trips
+                  </Link>
+                  <Link href="/profile" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Profile
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Dashboard
+                  </Link>
+                  <Link href="/timeline" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Timeline
+                  </Link>
+                </>
+              )}
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">

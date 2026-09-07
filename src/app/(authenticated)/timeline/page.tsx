@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import AIEvidenceSummary from '@/components/AIEvidenceSummary';
+import TimelineAcknowledgement from './TimelineAcknowledgement';
 
 type Props = {
   searchParams?: { [key: string]: string | string[] | undefined };
@@ -31,7 +32,7 @@ export default async function TimelinePage({ searchParams }: Props) {
 
   let query = supabaseServer
     .from('trips')
-    .select('id, facility_name')
+    .select('id, facility_name, status')
     .eq('driver_id', driver.id)
     .in('status', ['active', 'claimed', 'in_progress', 'completed']);
 
@@ -69,6 +70,7 @@ export default async function TimelinePage({ searchParams }: Props) {
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
+      {trip.status === 'completed' && <TimelineAcknowledgement tripId={trip.id} />}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Trip Timeline: {trip.facility_name}</h1>
         <Link href="/" className="text-blue-600 hover:underline font-medium">

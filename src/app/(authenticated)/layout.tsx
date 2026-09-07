@@ -16,28 +16,36 @@ export default async function AuthenticatedLayout({
   }
 
   const identity = await getFreightIdentity();
+  let userRole: 'DRIVER' | 'COMPANY' | 'REVIEWER' | null = null;
 
-  if (!identity) {
-    // Check for reviewer authorization
-    const { data: reviewerAuth } = await supabase
-      .from('reviewer_authorizations')
-      .select('auth_id')
-      .eq('auth_id', data.user.id)
-      .single();
+  const { data: reviewerAuth } = await supabase
+    .from('reviewer_authorizations')
+    .select('auth_id')
+    .eq('auth_id', data.user.id)
+    .single();
 
-    if (!reviewerAuth) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-          <p className="text-gray-500">Identity not found. Please contact support.</p>
-        </div>
-      );
+  if (reviewerAuth) {
+    userRole = 'REVIEWER';
+  } else if (identity) {
+    if (identity.trusted_role === 'COMPANY') {
+      userRole = 'COMPANY';
+    } else {
+      userRole = 'DRIVER';
     }
+  }
+
+  if (!identity && !reviewerAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <p className="text-gray-500">Identity not found. Please contact support.</p>
+      </div>
+    );
   }
 
   if (identity && identity.verification_status === 'REJECTED') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Navbar userEmail={data.user.email} />
+        <Navbar userEmail={data.user.email} role={userRole} />
         <div className="flex-grow flex items-center justify-center p-6">
           <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
             <h1 className="text-2xl font-bold text-red-700 mb-4">Application Rejected</h1>
@@ -56,7 +64,7 @@ export default async function AuthenticatedLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar userEmail={data.user.email} />
+      <Navbar userEmail={data.user.email} role={userRole} />
       {children}
     </div>
   );

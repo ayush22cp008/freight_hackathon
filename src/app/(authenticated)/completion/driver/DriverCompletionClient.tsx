@@ -14,13 +14,11 @@ export default function DriverCompletionClient({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState<any>(null);
   const router = useRouter();
 
   const handleSubmit = async () => {
     setLoading(true);
     setError('');
-    setSuccess(null);
 
     try {
       const res = await fetch('/api/completion/driver', {
@@ -34,34 +32,12 @@ export default function DriverCompletionClient({
         throw new Error(data.error || 'Failed to submit driver confirmation');
       }
 
-      setSuccess(data.state);
+      router.refresh();
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
-    } finally {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="p-8 max-w-2xl mx-auto space-y-4">
-        <div className="bg-green-100 text-green-800 p-6 rounded-lg shadow border border-green-200">
-          <h2 className="text-2xl font-bold mb-2">Driver Confirmation Recorded!</h2>
-          {success.status === 'completed' ? (
-            <p>The receiver has also confirmed. The trip is now fully <strong>COMPLETED</strong>.</p>
-          ) : (
-            <p>Your confirmation has been saved. <strong>Waiting for the receiving company to confirm</strong> before the trip is fully completed.</p>
-          )}
-          <button 
-            onClick={() => router.push('/')}
-            className="mt-6 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">

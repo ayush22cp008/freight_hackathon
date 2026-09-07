@@ -192,194 +192,71 @@ export default async function Home() {
 
   const driverId = driver.id;
 
-  // Get active trip
-  const { data: trip } = await supabaseServer
+  // Check for active trip
+  const { data: activeTrip } = await supabaseServer
     .from('trips')
-    .select('id, facility_name, status, driver_completion_confirmed_at')
+    .select('id, facility_name, status')
     .eq('driver_id', driverId)
     .in('status', ['active', 'claimed', 'in_progress'])
     .limit(1)
     .single();
 
-  // Get completed historical trips
-  const { data: completedTrips } = await supabaseServer
-    .from('trips')
-    .select('id, facility_name, destination_name, distance, duration, payout')
-    .eq('driver_id', driverId)
-    .eq('status', 'completed')
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const completedTripsSection = (
-    <div className="mt-8 pt-8 border-t border-gray-200">
-      <h2 className="text-xl font-semibold mb-4">Past / Completed Trips</h2>
-      {!completedTrips || completedTrips.length === 0 ? (
-        <p className="text-gray-500 bg-gray-50 p-6 rounded-lg border border-gray-200 text-center">No completed trips yet.</p>
+  return (
+    <main className="p-8 max-w-4xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold mb-6">Driver Dashboard</h1>
+      <h2 className="text-xl font-semibold mb-2">Welcome, {driver.name}</h2>
+      
+      {activeTrip ? (
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">My Active Trip</h3>
+          <p className="text-gray-700 mb-4">You have an ongoing delivery from <strong>{activeTrip.facility_name}</strong>.</p>
+          <Link
+            href="/driver/active"
+            className="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700 transition-colors"
+          >
+            Continue Trip →
+          </Link>
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {completedTrips.map((ct) => (
-            <div key={ct.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="font-semibold text-gray-900">Pickup: {ct.facility_name || 'N/A'}</h3>
-                <p className="text-gray-700 text-sm font-medium">Dropoff: {ct.destination_name || 'N/A'}</p>
-                <div className="flex gap-4 text-xs text-gray-500 mt-2">
-                  <span>Distance: {ct.distance ? `${ct.distance} mi` : 'N/A'}</span>
-                  <span>Duration: {ct.duration || 'N/A'}</span>
-                  <span className="font-semibold text-green-700">Payout: ${ct.payout || 'N/A'}</span>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Link
-                  href={`/timeline?tripId=${ct.id}`}
-                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md font-medium transition-colors"
-                >
-                  View Timeline
-                </Link>
-              </div>
-            </div>
-          ))}
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-600">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">No Active Trip</h3>
+          <p className="text-gray-700 mb-4">You are currently available for new deliveries.</p>
+          <Link
+            href="/driver/available"
+            className="inline-block bg-green-600 text-white py-2 px-6 rounded-md font-medium hover:bg-green-700 transition-colors"
+          >
+            Find Available Trips →
+          </Link>
         </div>
       )}
-    </div>
-  );
 
-  if (!trip) {
-    // If no active trip, fetch published trips available for claim
-    const { data: publishedTrips } = await supabaseServer
-      .from('trips')
-      .select('id, facility_name, destination_name, distance, duration, payout')
-      .eq('status', 'published')
-      .is('driver_id', null)
-      .order('created_at', { ascending: false });
-
-    return (
-      <main className="p-8 max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold mb-4">Welcome, {driver.name}</h1>
-        <h2 className="text-xl font-semibold mb-4">Available Trips</h2>
-        
-        {!publishedTrips || publishedTrips.length === 0 ? (
-          <p className="text-gray-600 bg-white p-6 rounded-lg shadow border border-gray-200">
-            No published trips available at this time.
-          </p>
-        ) : (
-          <div className="grid gap-6">
-            {publishedTrips.map((pt) => (
-              <div key={pt.id} className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col sm:flex-row justify-between gap-4">
-                <div className="space-y-2">
-                  <h3 className="font-bold text-lg">Pickup: {pt.facility_name || 'N/A'}</h3>
-                  <p className="text-gray-700 font-medium">Dropoff: {pt.destination_name || 'N/A'}</p>
-                  <div className="flex gap-4 text-sm text-gray-500">
-                    <span>Distance: {pt.distance ? `${pt.distance} mi` : 'N/A'}</span>
-                    <span>Duration: {pt.duration || 'N/A'}</span>
-                    <span className="font-semibold text-green-700">Payout: ${pt.payout || 'N/A'}</span>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <ClaimTripButton tripId={pt.id} />
-                </div>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Available Trips</h3>
+            <p className="text-gray-600 mb-4">Browse and claim new delivery opportunities.</p>
           </div>
-        )}
-
-        {completedTripsSection}
-      </main>
-    );
-  }
-
-  // Get events for the active trip
-  const { data: events } = await supabaseServer
-    .from('events')
-    .select('event_type')
-    .eq('trip_id', trip.id);
-
-  const eventTypes = events?.map(e => e.event_type) || [];
-
-  const hasArrival = eventTypes.includes('arrival') || eventTypes.includes('ARRIVED_AT_PICKUP');
-  const hasCheckin = eventTypes.includes('checkin') || eventTypes.includes('PICKUP_CHECKED_IN');
-  const hasLoad = eventTypes.includes('GOODS_LOADED');
-  const hasDeparture = eventTypes.includes('departure') || eventTypes.includes('PICKUP_DEPARTED');
-  const hasInTransit = eventTypes.includes('IN_TRANSIT');
-  const hasArrivedAtDelivery = eventTypes.includes('ARRIVED_AT_DELIVERY');
-  const hasReceiverCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
-  const hasGoodsUnloaded = eventTypes.includes('GOODS_UNLOADED');
-  const hasDeliveryDeparted = eventTypes.includes('DELIVERY_DEPARTED');
-
-  let stateText = '';
-  let ctaText = '';
-  let ctaHref = '';
-
-  if (!hasArrival) {
-    stateText = trip.status === 'claimed' ? 'Trip Claimed - Arrival Pending' : 'Arrival Pending';
-    ctaText = 'Start Arrival';
-    ctaHref = '/events/arrival';
-  } else if (!hasCheckin) {
-    stateText = 'Arrival Complete';
-    ctaText = 'Start Check-in';
-    ctaHref = '/events/checkin';
-  } else if (!hasLoad) {
-    stateText = 'Check-in Complete';
-    ctaText = 'Record Goods Loaded';
-    ctaHref = '/events/load';
-  } else if (!hasDeparture) {
-    stateText = 'Goods Loaded';
-    ctaText = 'Start Pickup Departure';
-    ctaHref = '/events/pickup-departed';
-  } else if (!hasInTransit) {
-    stateText = 'Pickup Departed';
-    ctaText = 'Record In-Transit';
-    ctaHref = '/events/in-transit';
-  } else if (!hasArrivedAtDelivery) {
-    stateText = 'In Transit';
-    ctaText = 'Record Arrival at Delivery';
-    ctaHref = '/events/arrived-at-delivery';
-  } else if (!hasReceiverCheckedIn) {
-    stateText = 'Arrived at Delivery';
-    ctaText = 'View Timeline (Awaiting Receiver)';
-    ctaHref = '/timeline';
-  } else if (!hasGoodsUnloaded) {
-    stateText = 'Receiver Checked In';
-    ctaText = 'Record Goods Unloaded';
-    ctaHref = '/events/goods-unloaded';
-  } else if (!hasDeliveryDeparted) {
-    stateText = 'Goods Unloaded';
-    ctaText = 'Record Delivery Departed';
-    ctaHref = '/events/delivery-departed';
-  } else if (trip.status === 'completed') {
-    stateText = 'Completed';
-    ctaText = 'View Timeline';
-    ctaHref = '/timeline';
-  } else if (!trip.driver_completion_confirmed_at) {
-    stateText = 'Delivery Departed';
-    ctaText = 'Confirm Delivery Completion';
-    ctaHref = '/completion/driver';
-  } else {
-    stateText = 'Waiting for Receiver Confirmation';
-    ctaText = 'View Timeline';
-    ctaHref = '/timeline';
-  }
-
-  return (
-    <main className="p-8 max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Active Trip: {trip.facility_name}</h1>
-
-      <div className="bg-white p-6 rounded-lg shadow space-y-4 border border-gray-200">
-        <div>
-          <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Current Status</p>
-          <p className="text-lg font-medium text-gray-900">{stateText}</p>
+          <Link
+            href="/driver/available"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            View Available Trips →
+          </Link>
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
+        <div className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Completed Trips</h3>
+            <p className="text-gray-600 mb-4">Review your delivery history and timelines.</p>
+          </div>
           <Link
-            href={ctaHref}
-            className="block w-full text-center bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            href="/driver/history"
+            className="text-blue-600 hover:underline font-medium"
           >
-            {ctaText}
+            View History →
           </Link>
         </div>
       </div>
-
-      {completedTripsSection}
     </main>
   );
 }
