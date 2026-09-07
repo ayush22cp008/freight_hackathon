@@ -6,7 +6,7 @@ import AIEvidenceSummary from '@/components/AIEvidenceSummary';
 import TimelineAcknowledgement from './TimelineAcknowledgement';
 
 type Props = {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function TimelinePage({ searchParams }: Props) {
@@ -28,7 +28,8 @@ export default async function TimelinePage({ searchParams }: Props) {
     redirect('/');
   }
 
-  const tripId = searchParams?.tripId;
+  const resolvedParams = await searchParams;
+  const tripId = resolvedParams?.tripId;
 
   let query = supabaseServer
     .from('trips')
