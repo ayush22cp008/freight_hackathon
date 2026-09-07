@@ -110,7 +110,7 @@ export default async function TimelinePage({ searchParams }: Props) {
                   <img 
                     src={event.photo_url} 
                     alt={`${event.event_type} proof`} 
-                    className="max-w-xs rounded shadow-sm border border-gray-200" 
+                    className="w-full max-w-xs rounded shadow-sm border border-gray-200" 
                   />
                 </div>
               ) : (
