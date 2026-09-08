@@ -63,7 +63,7 @@ export default function PickupDepartedClient({ tripId, facilityName }: { tripId:
           <p><strong>Timestamp:</strong> {new Date(success.timestamp).toLocaleString()}</p>
           {success.photo && (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={success.photo} alt="Pickup departure proof" className="mt-4 max-w-sm rounded shadow-sm border border-gray-200" />
+            <img src={success.photo} alt="Pickup departure proof" className="mt-4 w-full max-w-sm rounded shadow-sm border border-gray-200" />
           )}
           <button 
             onClick={() => router.push('/')}

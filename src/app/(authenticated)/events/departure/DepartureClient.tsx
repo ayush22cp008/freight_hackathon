@@ -64,7 +64,7 @@ export default function DepartureClient({ tripId, facilityName }: { tripId: stri
           <h2 className="text-2xl font-bold mb-2">Departure Recorded!</h2>
           <p><strong>Timestamp:</strong> {new Date(success.timestamp).toLocaleString()}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={success.photo} alt="Departure proof" className="mt-4 max-w-sm rounded shadow-sm border border-gray-200" />
+          <img src={success.photo} alt="Departure proof" className="mt-4 w-full max-w-sm rounded shadow-sm border border-gray-200" />
           <button 
             onClick={() => router.push('/')}
             className="mt-6 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
