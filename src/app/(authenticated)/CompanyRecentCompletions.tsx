@@ -7,9 +7,11 @@ type Trip = {
   id: string;
   facility_name: string;
   destination_name: string;
+  company_id: string;
+  receiving_company_id: string;
 };
 
-export default function CompanyRecentCompletions({ trips }: { trips: Trip[] }) {
+export default function CompanyRecentCompletions({ trips, currentCompanyId }: { trips: Trip[], currentCompanyId: string }) {
   const [unackedTrips, setUnackedTrips] = useState<Trip[]>([]);
 
   useEffect(() => {
@@ -31,14 +33,20 @@ export default function CompanyRecentCompletions({ trips }: { trips: Trip[] }) {
         Recently Completed
       </h2>
       <div className="grid gap-4">
-        {unackedTrips.map(trip => (
-          <div key={trip.id} className="border border-green-200 bg-green-50 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
-            <div>
-              <div className="font-bold text-gray-900">Your recent trip is finished</div>
-              <div className="text-sm text-green-800 mt-1">
-                Delivery from {trip.facility_name} has been fully completed.
+        {unackedTrips.map(trip => {
+          const isSender = trip.company_id === currentCompanyId;
+          const isReceiver = trip.receiving_company_id === currentCompanyId;
+          const relationship = isSender ? 'sent trip' : isReceiver ? 'received delivery' : 'trip';
+          const directionText = isSender ? `delivery to ${trip.destination_name}` : `delivery from ${trip.facility_name}`;
+
+          return (
+            <div key={trip.id} className="border border-green-200 bg-green-50 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
+              <div>
+                <div className="font-bold text-gray-900">Your recent {relationship} is finished</div>
+                <div className="text-sm text-green-800 mt-1">
+                  Your {directionText} has been fully completed.
+                </div>
               </div>
-            </div>
             <Link 
               href={`/company/trips/${trip.id}`} 
               className="mt-3 sm:mt-0 bg-green-600 text-white py-2 px-4 rounded-md font-medium hover:bg-green-700 text-center shadow-sm"
@@ -46,7 +54,7 @@ export default function CompanyRecentCompletions({ trips }: { trips: Trip[] }) {
               View Completed Trip
             </Link>
           </div>
-        ))}
+        )})}
       </div>
     </section>
   );

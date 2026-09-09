@@ -72,6 +72,13 @@ export default async function Home() {
       .in('status', ['active', 'claimed', 'in_progress', 'draft'])
       .limit(5);
 
+    // Fetch pending receiver requests for attention
+    const { data: pendingRequests } = await supabaseServer
+      .from('receiver_delivery_requests')
+      .select('id, trips(id, facility_name)')
+      .eq('receiving_company_id', company.id)
+      .eq('state', 'PENDING');
+
     // Filter attention trips
     const needsAttention = attentionTrips?.filter(trip => {
       const eventTypes = trip.events.map((e: any) => e.event_type);
@@ -85,11 +92,14 @@ export default async function Home() {
     // Fetch recent completed trips for CompanyRecentCompletions
     const { data: recentCompletedTrips } = await supabaseServer
       .from('trips')
-      .select('id, facility_name, destination_name')
+      .select('id, facility_name, destination_name, company_id, receiving_company_id')
       .or(`company_id.eq.${company.id},receiving_company_id.eq.${company.id}`)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
       .limit(5);
+
+    const hasRequests = pendingRequests && pendingRequests.length > 0;
+    const hasAttention = needsAttention.length > 0 || hasRequests;
 
     return (
       <main className="p-8 max-w-4xl mx-auto space-y-8">
@@ -98,20 +108,39 @@ export default async function Home() {
           <div className="text-gray-600 font-medium">{company.name}</div>
         </div>
 
-        <CompanyRecentCompletions trips={recentCompletedTrips || []} />
+        <CompanyRecentCompletions trips={recentCompletedTrips || []} currentCompanyId={company.id} />
 
         <section>
           <h2 className="text-xl font-semibold mb-4 text-red-600 flex items-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             Needs Attention
           </h2>
-          {needsAttention.length === 0 ? (
+          {!hasAttention ? (
             <div className="bg-green-50 p-6 rounded-lg border border-green-100 flex items-center">
               <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
               <span className="text-green-800 font-medium">No actions needed</span>
             </div>
           ) : (
             <div className="grid gap-4">
+              {pendingRequests && pendingRequests.map(req => {
+                const trip = Array.isArray(req.trips) ? req.trips[0] : req.trips;
+                return (
+                  <div key={req.id} className="border border-red-200 bg-red-50 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
+                    <div>
+                      <div className="font-bold text-gray-900">{trip?.facility_name || 'Delivery Request'}</div>
+                      <div className="text-sm text-red-700 mt-1">
+                        Receiver: Accept/Reject Delivery Request
+                      </div>
+                    </div>
+                    <Link 
+                      href={`/company/incoming`} 
+                      className="mt-3 sm:mt-0 bg-red-600 text-white py-2 px-4 rounded-md font-medium hover:bg-red-700 text-center"
+                    >
+                      Take Action
+                    </Link>
+                  </div>
+                );
+              })}
               {needsAttention.map(trip => {
                 const eventTypes = trip.events.map((e: any) => e.event_type);
                 const hasCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');

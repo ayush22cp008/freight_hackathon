@@ -67,6 +67,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 });
     }
 
+    // Automatically create the receiver request
+    const isSameCompany = creatorCompany.id === receiving_company_id;
+    const requestState = isSameCompany ? 'ACCEPTED' : 'PENDING';
+    const decidedAt = isSameCompany ? new Date().toISOString() : null;
+    const decidedBy = isSameCompany ? receiving_company_id : null;
+
+    const { error: requestError } = await supabaseServer
+      .from('receiver_delivery_requests')
+      .insert({
+        trip_id: newTrip.id,
+        sender_company_id: creatorCompany.id,
+        receiving_company_id,
+        state: requestState,
+        decided_at: decidedAt,
+        decided_by: decidedBy
+      });
+
+    if (requestError) {
+      console.error('Error creating receiver request:', requestError);
+      // Fallback: delete the trip if request creation fails to maintain atomicity
+      await supabaseServer.from('trips').delete().eq('id', newTrip.id);
+      return NextResponse.json({ error: 'Failed to create receiver request' }, { status: 500 });
+    }
+
     return NextResponse.json({ trip: newTrip });
   } catch (err) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });

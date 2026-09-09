@@ -54,6 +54,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Trip is not in a publishable state' }, { status: 400 });
     }
 
+    // Verify Receiver Agreement
+    const { data: requestRecord, error: requestFetchError } = await supabaseServer
+      .from('receiver_delivery_requests')
+      .select('state')
+      .eq('trip_id', trip_id)
+      .single();
+
+    if (requestFetchError || !requestRecord) {
+      return NextResponse.json({ error: 'Receiver agreement record not found' }, { status: 400 });
+    }
+
+    if (requestRecord.state !== 'ACCEPTED') {
+      return NextResponse.json({ error: `Cannot publish trip. Receiver agreement is ${requestRecord.state}` }, { status: 403 });
+    }
+
     // Publish trip
     const { data: updatedTrip, error: updateError } = await supabaseServer
       .from('trips')
