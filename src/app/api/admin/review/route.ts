@@ -50,7 +50,10 @@ export async function POST(request: Request) {
 
       const { error: rejectError } = await supabaseServer
         .from('freight_identities')
-        .update({ verification_status: 'REJECTED' })
+        .update({ 
+          verification_status: 'REJECTED',
+          reviewed_at: new Date().toISOString()
+        })
         .eq('id', identity.id);
 
       if (rejectError) {
@@ -71,7 +74,8 @@ export async function POST(request: Request) {
       .from('freight_identities')
       .update({
         verification_status: 'VERIFIED',
-        trusted_role: identity.requested_role
+        trusted_role: identity.requested_role,
+        reviewed_at: new Date().toISOString()
       })
       .eq('id', identity.id);
 
