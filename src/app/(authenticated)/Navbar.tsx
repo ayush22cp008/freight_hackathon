@@ -21,7 +21,7 @@ export default function Navbar({ userEmail, role }: { userEmail?: string; role?:
               <span className="text-xl font-bold text-blue-600">Freight</span>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {role === 'DRIVER' ? (
+              {role === 'DRIVER' && (
                 <>
                   <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                     Dashboard
@@ -39,7 +39,27 @@ export default function Navbar({ userEmail, role }: { userEmail?: string; role?:
                     Profile
                   </Link>
                 </>
-              ) : (
+              )}
+              {role === 'COMPANY' && (
+                <>
+                  <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Dashboard
+                  </Link>
+                  <Link href="/company/created" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    My Created Trips
+                  </Link>
+                  <Link href="/company/incoming" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Incoming Deliveries
+                  </Link>
+                  <Link href="/company/history" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    History
+                  </Link>
+                  <Link href="/company/profile" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Profile
+                  </Link>
+                </>
+              )}
+              {role === 'REVIEWER' && (
                 <>
                   <Link href="/" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                     Dashboard

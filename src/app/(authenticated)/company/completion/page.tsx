@@ -47,7 +47,7 @@ export default async function ReceiverCompletionPage({
     .from('trips')
     .select('id, destination_name, driver_completion_confirmed_at, receiver_delivery_confirmed_at, receiving_company_id, driver_id')
     .eq('id', tripId)
-    .in('status', ['active', 'claimed', 'in_progress'])
+    .in('status', ['active', 'claimed', 'in_progress', 'completed'])
     .single();
 
   if (!trip) {
@@ -86,9 +86,8 @@ export default async function ReceiverCompletionPage({
     );
   }
 
-  if (trip.receiver_delivery_confirmed_at) {
-    redirect('/');
-  }
+  // If receiver has already confirmed, we don't redirect.
+  // We pass alreadyConfirmed=true to the client component.
 
   // Get driver info for context
   const { data: driver } = await supabaseServer
@@ -103,6 +102,7 @@ export default async function ReceiverCompletionPage({
       destinationName={trip.destination_name || 'Delivery Facility'} 
       driverName={driver?.name || 'Assigned Driver'}
       driverConfirmed={!!trip.driver_completion_confirmed_at}
+      alreadyConfirmed={!!trip.receiver_delivery_confirmed_at}
     />
   );
 }

@@ -5,6 +5,7 @@ import { getFreightIdentity } from '@/lib/auth';
 import Link from 'next/link';
 import ClaimTripButton from './ClaimTripButton';
 import PublicShareManager from './company/PublicShareManager';
+import CompanyRecentCompletions from './CompanyRecentCompletions';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -49,8 +50,8 @@ export default async function Home() {
       redirect('/onboarding');
     }
 
-    // Fetch incoming trips for receiver check-in
-    const { data: incomingTrips } = await supabaseServer
+    // Fetch incoming trips needing attention (arrived but not checked in, or departed but not completed)
+    const { data: attentionTrips } = await supabaseServer
       .from('trips')
       .select(`
         id, 
@@ -63,112 +64,122 @@ export default async function Home() {
       .eq('receiving_company_id', company.id)
       .in('status', ['active', 'claimed', 'in_progress']);
 
-    // Fetch completed trips for public sharing
-    const { data: companyCompletedTrips } = await supabaseServer
+    // Fetch active created trips
+    const { data: activeCreatedTrips } = await supabaseServer
       .from('trips')
-      .select(`
-        id, 
-        facility_name, 
-        destination_name, 
-        status, 
-        trip_public_shares ( status )
-      `)
-      .eq('receiving_company_id', company.id)
+      .select('id, facility_name, destination_name, status, driver_id')
+      .eq('company_id', company.id)
+      .in('status', ['active', 'claimed', 'in_progress', 'draft'])
+      .limit(5);
+
+    // Filter attention trips
+    const needsAttention = attentionTrips?.filter(trip => {
+      const eventTypes = trip.events.map((e: any) => e.event_type);
+      const hasArrived = eventTypes.includes('ARRIVED_AT_DELIVERY');
+      const hasCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
+      const hasDeparted = eventTypes.includes('DELIVERY_DEPARTED');
+      
+      return (!hasCheckedIn && hasArrived) || (hasDeparted && !trip.receiver_delivery_confirmed_at);
+    }) || [];
+
+    // Fetch recent completed trips for CompanyRecentCompletions
+    const { data: recentCompletedTrips } = await supabaseServer
+      .from('trips')
+      .select('id, facility_name, destination_name')
+      .or(`company_id.eq.${company.id},receiving_company_id.eq.${company.id}`)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(5);
 
     return (
-      <main className="p-8 max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">Company Dashboard</h1>
-                {incomingTrips?.length === 0 ? (
-                  <p className="text-gray-500">No incoming deliveries at this time.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {incomingTrips?.map(trip => {
-                      const eventTypes = trip.events.map((e: any) => e.event_type);
-                      const hasArrived = eventTypes.includes('ARRIVED_AT_DELIVERY');
-                      const hasCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
-                      const hasDeparted = eventTypes.includes('DELIVERY_DEPARTED');
-                      
-                      let cta = null;
-                      let statusText = 'In Transit';
+      <main className="p-8 max-w-4xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <div className="text-gray-600 font-medium">{company.name}</div>
+        </div>
 
-                      if (trip.status === 'completed') {
-                        statusText = 'Completed';
-                      } else if (!hasCheckedIn && hasArrived) {
-                        statusText = 'Arrived - Action Required';
-                        cta = (
-                          <Link href={`/company/receiver-checkin?tripId=${trip.id}`} className="text-blue-600 hover:underline font-medium text-sm">
-                            Complete Receiver Check-in →
-                          </Link>
-                        );
-                      } else if (hasCheckedIn && !hasDeparted) {
-                        statusText = 'Driver is Unloading';
-                      } else if (hasDeparted && !trip.receiver_delivery_confirmed_at) {
-                        statusText = 'Action Required';
-                        cta = (
-                          <Link href={`/company/completion?tripId=${trip.id}`} className="text-blue-600 hover:underline font-medium text-sm">
-                            Confirm Delivery Received →
-                          </Link>
-                        );
-                      } else if (trip.receiver_delivery_confirmed_at) {
-                        statusText = 'Waiting for Driver Confirmation';
-                      }
+        <CompanyRecentCompletions trips={recentCompletedTrips || []} />
 
-                      return (
-                        <div key={trip.id} className="border border-gray-200 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
-                          <div>
-                            <div className="font-medium text-gray-900">{trip.facility_name || 'Incoming Trip'}</div>
-                            <div className="text-sm text-gray-500">Status: {statusText}</div>
-                          </div>
-                          {cta && <div className="mt-2 sm:mt-0">{cta}</div>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-        <h2 className="text-xl font-semibold mt-8 mb-4">Completed Deliveries</h2>
-        {!companyCompletedTrips || companyCompletedTrips.length === 0 ? (
-          <p className="text-gray-500 bg-white p-6 rounded-lg border border-gray-200">No completed deliveries yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {companyCompletedTrips.map(trip => {
-              const activeShares = trip.trip_public_shares?.filter((s: any) => s.status === 'ACTIVE') || [];
-              const hasActiveShare = activeShares.length > 0;
-              return (
-                <div key={trip.id} className="border border-gray-200 bg-white rounded p-4 flex flex-col">
-                  <div className="flex justify-between items-start mb-2">
+        <section>
+          <h2 className="text-xl font-semibold mb-4 text-red-600 flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            Needs Attention
+          </h2>
+          {needsAttention.length === 0 ? (
+            <div className="bg-green-50 p-6 rounded-lg border border-green-100 flex items-center">
+              <svg className="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+              <span className="text-green-800 font-medium">No actions needed</span>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {needsAttention.map(trip => {
+                const eventTypes = trip.events.map((e: any) => e.event_type);
+                const hasCheckedIn = eventTypes.includes('RECEIVER_CHECKED_IN');
+                
+                return (
+                  <div key={trip.id} className="border border-red-200 bg-red-50 rounded p-4 flex flex-col sm:flex-row justify-between sm:items-center">
                     <div>
-                      <div className="font-medium text-gray-900">{trip.facility_name || 'Trip'}</div>
-                      <div className="text-sm text-gray-500">To: {trip.destination_name || 'N/A'}</div>
+                      <div className="font-bold text-gray-900">{trip.facility_name}</div>
+                      <div className="text-sm text-red-700 mt-1">
+                        {!hasCheckedIn ? 'Arrived - Receiver Check-in Required' : 'Departed - Delivery Confirmation Required'}
+                      </div>
                     </div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Completed
-                    </span>
+                    <Link 
+                      href={!hasCheckedIn ? `/company/receiver-checkin?tripId=${trip.id}` : `/company/completion?tripId=${trip.id}`} 
+                      className="mt-3 sm:mt-0 bg-red-600 text-white py-2 px-4 rounded-md font-medium hover:bg-red-700 text-center"
+                    >
+                      Take Action
+                    </Link>
                   </div>
-                  <PublicShareManager tripId={trip.id} hasActiveShare={hasActiveShare} />
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-        <div className="bg-white p-6 rounded-lg shadow border border-gray-200 mt-8">
-          <h2 className="text-xl font-semibold mb-2">Welcome, {company?.name || 'Company'}</h2>
-          <p className="text-gray-600 mb-6">
-            This is the verified company portal. From here you can manage your fleet, drivers, and trips.
-          </p>
-          <div className="pt-4 border-t border-gray-100">
-            <Link
-              href="/company/trips/create"
-              className="inline-block bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors"
-            >
-              Create New Trip
+        <section>
+          <div className="flex justify-between items-end mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Active Created Trips</h2>
+            <Link href="/company/created" className="text-blue-600 hover:underline text-sm font-medium">View All →</Link>
+          </div>
+          
+          {!activeCreatedTrips || activeCreatedTrips.length === 0 ? (
+            <p className="text-gray-500 bg-white p-6 rounded-lg border border-gray-200">No active trips currently.</p>
+          ) : (
+            <div className="grid gap-4">
+              {activeCreatedTrips.map(trip => (
+                <Link key={trip.id} href={`/company/trips/${trip.id}`} className="block">
+                  <div className="border border-gray-200 bg-white rounded p-4 hover:shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium text-gray-900">{trip.facility_name} → {trip.destination_name}</div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 uppercase tracking-wide">
+                        {trip.status}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Quick Access</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href="/company/trips/create" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow transition-all group">
+              <h3 className="font-bold text-lg text-blue-600 group-hover:text-blue-700 mb-1">Create Trip</h3>
+              <p className="text-sm text-gray-500">Publish a new delivery</p>
+            </Link>
+            <Link href="/company/incoming" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow transition-all group">
+              <h3 className="font-bold text-lg text-blue-600 group-hover:text-blue-700 mb-1">Incoming Deliveries</h3>
+              <p className="text-sm text-gray-500">Manage receiving tasks</p>
+            </Link>
+            <Link href="/company/history" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow transition-all group">
+              <h3 className="font-bold text-lg text-blue-600 group-hover:text-blue-700 mb-1">History</h3>
+              <p className="text-sm text-gray-500">View past trips and public shares</p>
             </Link>
           </div>
-        </div>
+        </section>
       </main>
     );
   }
