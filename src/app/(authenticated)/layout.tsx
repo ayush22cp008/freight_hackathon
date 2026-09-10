@@ -43,15 +43,31 @@ export default async function AuthenticatedLayout({
   }
 
   if (identity && identity.verification_status === 'REJECTED') {
+    const { data: evidence } = await supabase
+      .from('onboarding_evidence')
+      .select('rejection_reason')
+      .eq('auth_id', data.user.id)
+      .single();
+
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navbar userEmail={data.user.email} role={userRole} />
         <div className="flex-grow flex items-center justify-center p-6">
           <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
             <h1 className="text-2xl font-bold text-red-700 mb-4">Application Rejected</h1>
-            <p className="text-gray-600">
-              Unfortunately, your verification request has been rejected. Please contact support for more details.
-            </p>
+            {evidence?.rejection_reason ? (
+              <div className="bg-red-50 border border-red-200 rounded p-4 text-left">
+                <h2 className="text-red-800 font-semibold mb-1 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Reason
+                </h2>
+                <p className="text-red-700 text-sm">{evidence.rejection_reason}</p>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                Unfortunately, your verification request has been rejected. Please contact support for more details.
+              </p>
+            )}
           </div>
         </div>
       </div>
