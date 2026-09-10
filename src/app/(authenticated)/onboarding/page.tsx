@@ -15,13 +15,17 @@ export default async function OnboardingPage() {
   }
 
   const supabase = await createClient();
-  const { data: evidence } = await supabase
+  const { data: evidenceRows } = await supabase
     .from('onboarding_evidence')
     .select('*')
     .eq('auth_id', identity.auth_id)
-    .single();
+    .eq('status', 'PENDING')
+    .order('created_at', { ascending: false })
+    .limit(1);
 
-  if (evidence && identity.verification_status !== 'REJECTED') {
+  const evidence = evidenceRows?.[0] ?? null;
+
+  if (identity.verification_status === 'PENDING') {
     return (
       <div className="flex-grow flex items-center justify-center p-6 mt-16">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center border border-gray-200">
@@ -32,11 +36,11 @@ export default async function OnboardingPage() {
           </p>
           <div className="bg-blue-50 text-blue-800 p-4 rounded-md text-sm text-left space-y-2">
             <p><strong>Role Requested:</strong> {identity.requested_role}</p>
-            <p><strong>Evidence Type:</strong> {evidence.document_type}</p>
-            <p><strong>Status:</strong> {evidence.status}</p>
-            {evidence.rejection_reason && (
+            <p><strong>Evidence Type:</strong> {evidence?.document_type || 'Unknown'}</p>
+            <p><strong>Status:</strong> {evidence?.status || 'PENDING'}</p>
+            {evidence?.rejection_reason && (
               <div className="mt-4 p-3 bg-red-100 text-red-800 rounded">
-                <strong>Rejection Reason:</strong> {evidence.rejection_reason}
+                <strong>Rejection Reason:</strong> {evidence?.rejection_reason}
               </div>
             )}
           </div>
