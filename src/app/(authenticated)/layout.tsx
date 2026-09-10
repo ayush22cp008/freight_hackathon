@@ -80,7 +80,7 @@ export default async function AuthenticatedLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar userEmail={data.user.email} role={userRole} />
+      {userRole !== 'REVIEWER' && <Navbar userEmail={data.user.email} role={userRole} />}
       <RejectedGuard isRejected={!!isRejected} rejectionUI={rejectionUI}>
         {children}
       </RejectedGuard>
