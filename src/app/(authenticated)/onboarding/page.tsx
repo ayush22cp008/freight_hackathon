@@ -10,7 +10,7 @@ export default async function OnboardingPage() {
     redirect('/login');
   }
 
-  if (identity.verification_status !== 'PENDING') {
+  if (identity.verification_status !== 'PENDING' && identity.verification_status !== 'REJECTED') {
     redirect('/');
   }
 
@@ -21,7 +21,7 @@ export default async function OnboardingPage() {
     .eq('auth_id', identity.auth_id)
     .single();
 
-  if (evidence) {
+  if (evidence && identity.verification_status !== 'REJECTED') {
     return (
       <div className="flex-grow flex items-center justify-center p-6 mt-16">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center border border-gray-200">
@@ -48,7 +48,9 @@ export default async function OnboardingPage() {
   return (
     <div className="flex-grow flex flex-col items-center justify-center p-6 mt-16">
       <div className="bg-white p-8 rounded-lg shadow-md max-w-lg w-full border border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Complete Onboarding</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {identity.verification_status === 'REJECTED' ? 'Re-upload Evidence' : 'Complete Onboarding'}
+        </h1>
         <p className="text-gray-600 mb-6">
           You have requested to join as a <span className="font-semibold">{identity.requested_role}</span>. 
           Please provide the required verification details below.

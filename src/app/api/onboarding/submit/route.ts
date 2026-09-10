@@ -10,8 +10,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (identity.verification_status !== 'PENDING') {
-      return NextResponse.json({ error: 'Account is not in pending status' }, { status: 400 });
+    if (identity.verification_status !== 'PENDING' && identity.verification_status !== 'REJECTED') {
+      return NextResponse.json({ error: 'Account is not in a valid state for submission' }, { status: 400 });
     }
 
     const { document_type, storage_path, mime_type, size_bytes } = await request.json();
@@ -52,6 +52,23 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Evidence submission error:', error);
       return NextResponse.json({ error: 'Failed to submit evidence' }, { status: 500 });
+    }
+
+    if (identity.verification_status === 'REJECTED') {
+      const { error: idError } = await supabase
+        .from('freight_identities')
+        .update({
+          verification_status: 'PENDING',
+          reviewed_at: null
+        })
+        .eq('id', identity.id);
+
+      if (idError) {
+        console.error('Identity status update error:', idError);
+        // We log the error but still return success since the evidence was submitted
+        // However, to be strict, we can return a 500 if the transition fails.
+        return NextResponse.json({ error: 'Failed to update identity status' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });
