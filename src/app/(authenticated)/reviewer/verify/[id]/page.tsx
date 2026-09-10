@@ -18,11 +18,15 @@ export default async function VerifyApplicantPage({ params }: { params: Promise<
     redirect('/reviewer/queue');
   }
 
-  const { data: evidence } = await supabaseServer
+  const { data: evidenceRows } = await supabaseServer
     .from('onboarding_evidence')
     .select('*')
     .eq('auth_id', identity.auth_id)
-    .single();
+    .eq('status', 'PENDING')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const evidence = evidenceRows?.[0] ?? null;
 
   return (
     <ApplicantVerificationClient
