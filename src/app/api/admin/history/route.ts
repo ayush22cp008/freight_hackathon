@@ -27,46 +27,40 @@ export async function GET(request: Request) {
     const offset = parseInt(searchParams.get('offset') || '0', 10);
     const id = searchParams.get('id'); // For fetching a single completed record
 
-    // 3. Query completed identities with newest-first ordering on the decision timestamp
-    let idQuery = supabaseServer
-      .from('freight_identities')
-      .select('*')
-      .in('verification_status', ['VERIFIED', 'REJECTED'])
+    // 3. Query reviewer_decisions with newest-first ordering
+    let historyQuery = supabaseServer
+      .from('reviewer_decisions')
+      .select(`
+        *,
+        identity:freight_identities(*),
+        evidence:onboarding_evidence(*)
+      `)
       .order('reviewed_at', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false });
 
     if (id) {
-      idQuery = idQuery.eq('id', id);
+      historyQuery = historyQuery.eq('identity_id', id);
     } else {
-      idQuery = idQuery.range(offset, offset + limit - 1);
+      historyQuery = historyQuery.range(offset, offset + limit - 1);
     }
 
-    const { data: identities, error: idError } = await idQuery;
-    if (idError) {
-      return NextResponse.json({ error: 'Failed to fetch identities' }, { status: 500 });
+    const { data: decisions, error: historyError } = await historyQuery;
+    if (historyError) {
+      return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
     }
 
-    if (!identities || identities.length === 0) {
+    if (!decisions || decisions.length === 0) {
       return NextResponse.json({ data: [] });
     }
 
-    // 4. Fetch corresponding evidence references for these identities
-    const authIds = identities.map(i => i.auth_id);
-    const { data: evidences, error: evError } = await supabaseServer
-      .from('onboarding_evidence')
-      .select('*')
-      .in('auth_id', authIds);
-
-    if (evError) {
-      return NextResponse.json({ error: 'Failed to fetch evidence' }, { status: 500 });
-    }
-
-    // 5. Stitch identities and evidence together to match the required Blueprint data shape
-    const data = identities.map(identity => {
-      const evidence = evidences?.find(e => e.auth_id === identity.auth_id);
+    // 4. Transform to match the required Blueprint data shape
+    const data = decisions.map((decision: any) => {
       return {
-        identity,
-        evidence: evidence || null
+        decision_id: decision.id,
+        decision_status: decision.decision,
+        reviewed_at: decision.reviewed_at,
+        identity: decision.identity,
+        evidence: decision.evidence || null
       };
     });
 

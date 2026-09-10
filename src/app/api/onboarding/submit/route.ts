@@ -21,21 +21,22 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient();
+    const { supabaseServer } = await import('@/lib/supabase-server');
     
-    // Check if there is an existing submission
-    const { data: existing } = await supabase
+    // Check if there is an existing submission (safely handle multiple previous submissions)
+    const { data: existingRecords } = await supabase
       .from('onboarding_evidence')
       .select('version')
       .eq('auth_id', identity.auth_id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    let newVersion = 1;
-    if (existing) {
-      newVersion = (existing.version || 1) + 1;
-      // Delete old evidence record so we can insert new (or we could update, but deleting/inserting keeps it simple if using UPSERT, but we don't have UPSERT by default unless using unique constraint. Let's just delete first)
-      await supabase.from('onboarding_evidence').delete().eq('auth_id', identity.auth_id);
-    }
+    const existing = existingRecords?.[0];
+    const newVersion = existing ? (existing.version || 1) + 1 : 1;
+
+    // Do NOT delete the old evidence. It is required for Reviewer History integrity.
     
+    // Insert new evidence row for the current submission
     const { error } = await supabase
       .from('onboarding_evidence')
       .insert({
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
     }
 
     if (identity.verification_status === 'REJECTED') {
-      const { error: idError } = await supabase
+      // Must use service role because users do not have UPDATE privileges on their identity
+      const { error: idError } = await supabaseServer
         .from('freight_identities')
         .update({
           verification_status: 'PENDING',
@@ -65,9 +67,7 @@ export async function POST(request: Request) {
 
       if (idError) {
         console.error('Identity status update error:', idError);
-        // We log the error but still return success since the evidence was submitted
-        // However, to be strict, we can return a 500 if the transition fails.
-        return NextResponse.json({ error: 'Failed to update identity status' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to update identity status. Please contact support.' }, { status: 500 });
       }
     }
 

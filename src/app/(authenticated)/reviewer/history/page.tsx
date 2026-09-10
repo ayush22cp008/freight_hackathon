@@ -45,20 +45,18 @@ export default async function VerificationHistoryPage({
 
   // Total count for pagination
   const { count } = await supabaseServer
-    .from('freight_identities')
-    .select('*', { count: 'exact', head: true })
-    .in('verification_status', ['VERIFIED', 'REJECTED']);
+    .from('reviewer_decisions')
+    .select('*', { count: 'exact', head: true });
 
-  const { data: completedIdentities } = await supabaseServer
-    .from('freight_identities')
-    .select('*')
-    .in('verification_status', ['VERIFIED', 'REJECTED'])
+  const { data: completedDecisions } = await supabaseServer
+    .from('reviewer_decisions')
+    .select('*, identity:freight_identities(*)')
     .order('reviewed_at', { ascending: false, nullsFirst: false })
     .order('id', { ascending: false })
     .range(offset, offset + ITEMS_PER_PAGE - 1);
 
   const totalPages = Math.ceil((count ?? 0) / ITEMS_PER_PAGE);
-  const records = completedIdentities ?? [];
+  const records = completedDecisions ?? [];
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
@@ -98,7 +96,10 @@ export default async function VerificationHistoryPage({
       ) : (
         <>
           <div className="space-y-3 mb-6">
-            {records.map((item) => (
+            {records.map((item) => {
+              const identity = item.identity;
+              if (!identity) return null;
+              return (
               <Link
                 key={item.id}
                 href={`/reviewer/history/${item.id}`}
@@ -107,21 +108,21 @@ export default async function VerificationHistoryPage({
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   {/* Avatar */}
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    item.verification_status === 'VERIFIED'
+                    item.decision === 'VERIFIED'
                       ? 'bg-emerald-500/15 border border-emerald-500/25'
                       : 'bg-red-500/15 border border-red-500/25'
                   }`}>
-                    <span className={`font-bold text-sm ${item.verification_status === 'VERIFIED' ? 'text-emerald-300' : 'text-red-300'}`}>
-                      {(item.email?.[0] ?? '?').toUpperCase()}
+                    <span className={`font-bold text-sm ${item.decision === 'VERIFIED' ? 'text-emerald-300' : 'text-red-300'}`}>
+                      {(identity.email?.[0] ?? '?').toUpperCase()}
                     </span>
                   </div>
 
                   {/* Info */}
                   <div className="flex-grow min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <p className="text-white font-medium text-sm truncate">{item.email}</p>
-                      <RoleBadge role={item.requested_role} />
-                      <StatusBadge status={item.verification_status} />
+                      <p className="text-white font-medium text-sm truncate">{identity.email}</p>
+                      <RoleBadge role={identity.requested_role} />
+                      <StatusBadge status={item.decision} />
                     </div>
                     <p className="text-slate-500 text-xs">
                       Decision:{' '}
@@ -140,7 +141,8 @@ export default async function VerificationHistoryPage({
                   </svg>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}

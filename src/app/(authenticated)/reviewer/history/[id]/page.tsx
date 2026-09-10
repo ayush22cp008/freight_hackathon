@@ -6,22 +6,21 @@ import EvidenceViewerClient from './EvidenceViewerClient';
 export default async function VerificationRecordPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: identity, error } = await supabaseServer
-    .from('freight_identities')
-    .select('*')
+  const { data: decision, error } = await supabaseServer
+    .from('reviewer_decisions')
+    .select(`
+      *,
+      identity:freight_identities(*),
+      evidence:onboarding_evidence(*)
+    `)
     .eq('id', id)
-    .in('verification_status', ['VERIFIED', 'REJECTED'])
     .single();
 
-  if (error || !identity) return notFound();
+  if (error || !decision || !decision.identity) return notFound();
 
-  const { data: evidence } = await supabaseServer
-    .from('onboarding_evidence')
-    .select('*')
-    .eq('auth_id', identity.auth_id)
-    .single();
-
-  const isVerified = identity.verification_status === 'VERIFIED';
+  const identity = decision.identity;
+  const evidence = decision.evidence;
+  const isVerified = decision.decision === 'VERIFIED';
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
@@ -92,8 +91,8 @@ export default async function VerificationRecordPage({ params }: { params: Promi
           <div className="flex flex-col sm:flex-row sm:items-center gap-1">
             <dt className="text-slate-500 text-sm w-40">Decision Date/Time</dt>
             <dd className="text-slate-200 text-sm">
-              {identity.reviewed_at
-                ? new Date(identity.reviewed_at).toLocaleString('en-IN', {
+              {decision.reviewed_at
+                ? new Date(decision.reviewed_at).toLocaleString('en-IN', {
                     day: 'numeric', month: 'long', year: 'numeric',
                     hour: '2-digit', minute: '2-digit', second: '2-digit'
                   })
@@ -104,7 +103,7 @@ export default async function VerificationRecordPage({ params }: { params: Promi
             <div className="flex flex-col gap-1 pt-2">
               <dt className="text-slate-500 text-sm">Rejection Reason</dt>
               <dd className="mt-1 bg-red-900/20 border border-red-700/30 rounded-xl px-4 py-3 text-slate-200 text-sm">
-                {evidence?.rejection_reason || 'No reason recorded.'}
+                {decision.rejection_reason || 'No reason recorded.'}
               </dd>
             </div>
           )}

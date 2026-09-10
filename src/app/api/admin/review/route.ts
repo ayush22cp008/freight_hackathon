@@ -42,19 +42,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Identity is not pending' }, { status: 400 });
     }
 
+    const decisionTime = new Date().toISOString();
+
+    // Fetch current evidence ID to link the decision
+    const { data: currentEvidence } = await supabaseServer
+      .from('onboarding_evidence')
+      .select('id')
+      .eq('auth_id', identity.auth_id)
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
     if (action === 'REJECT') {
       await supabaseServer
         .from('onboarding_evidence')
         .update({ status: 'REJECTED', rejection_reason })
-        .eq('auth_id', identity.auth_id);
+        .eq('auth_id', identity.auth_id)
+        .eq('status', 'PENDING');
 
       const { error: rejectError } = await supabaseServer
         .from('freight_identities')
         .update({ 
           verification_status: 'REJECTED',
-          reviewed_at: new Date().toISOString()
+          reviewed_at: decisionTime
         })
         .eq('id', identity.id);
+
+      await supabaseServer.from('reviewer_decisions').insert({
+        identity_id: identity.id,
+        auth_id: identity.auth_id,
+        evidence_id: currentEvidence?.id || null,
+        decision: 'REJECTED',
+        rejection_reason,
+        reviewed_at: decisionTime
+      });
 
       if (rejectError) {
         return NextResponse.json({ error: 'Failed to reject' }, { status: 500 });
@@ -67,7 +89,8 @@ export async function POST(request: Request) {
     await supabaseServer
       .from('onboarding_evidence')
       .update({ status: 'APPROVED' })
-      .eq('auth_id', identity.auth_id);
+      .eq('auth_id', identity.auth_id)
+      .eq('status', 'PENDING');
 
     // Update freight_identities
     const { error: approveError } = await supabaseServer
@@ -75,9 +98,17 @@ export async function POST(request: Request) {
       .update({
         verification_status: 'VERIFIED',
         trusted_role: identity.requested_role,
-        reviewed_at: new Date().toISOString()
+        reviewed_at: decisionTime
       })
       .eq('id', identity.id);
+
+    await supabaseServer.from('reviewer_decisions').insert({
+      identity_id: identity.id,
+      auth_id: identity.auth_id,
+      evidence_id: currentEvidence?.id || null,
+      decision: 'VERIFIED',
+      reviewed_at: decisionTime
+    });
 
     if (approveError) {
       return NextResponse.json({ error: 'Failed to approve' }, { status: 500 });
