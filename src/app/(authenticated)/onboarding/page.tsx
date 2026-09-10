@@ -25,7 +25,7 @@ export default async function OnboardingPage() {
 
   const evidence = evidenceRows?.[0] ?? null;
 
-  if (identity.verification_status === 'PENDING') {
+  if (identity.verification_status === 'PENDING' && evidence) {
     return (
       <div className="flex-grow flex items-center justify-center p-6 mt-16">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center border border-gray-200">
