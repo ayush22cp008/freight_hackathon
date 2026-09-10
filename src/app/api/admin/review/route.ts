@@ -27,112 +27,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    // 2. Fetch identity
-    const { data: identity, error: idError } = await supabaseServer
-      .from('freight_identities')
-      .select('*')
-      .eq('id', identity_id)
-      .single();
-
-    if (idError || !identity) {
-      return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
-    }
-
-    if (identity.verification_status !== 'PENDING') {
-      return NextResponse.json({ error: 'Identity is not pending' }, { status: 400 });
-    }
-
-    const decisionTime = new Date().toISOString();
-
-    // Fetch current evidence ID to link the decision
-    const { data: currentEvidence } = await supabaseServer
-      .from('onboarding_evidence')
-      .select('id')
-      .eq('auth_id', identity.auth_id)
-      .eq('status', 'PENDING')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (action === 'REJECT') {
-      await supabaseServer
-        .from('onboarding_evidence')
-        .update({ status: 'REJECTED', rejection_reason })
-        .eq('auth_id', identity.auth_id)
-        .eq('status', 'PENDING');
-
-      const { error: rejectError } = await supabaseServer
-        .from('freight_identities')
-        .update({ 
-          verification_status: 'REJECTED',
-          reviewed_at: decisionTime
-        })
-        .eq('id', identity.id);
-
-      await supabaseServer.from('reviewer_decisions').insert({
-        identity_id: identity.id,
-        auth_id: identity.auth_id,
-        evidence_id: currentEvidence?.id || null,
-        decision: 'REJECTED',
-        rejection_reason,
-        reviewed_at: decisionTime
-      });
-
-      if (rejectError) {
-        return NextResponse.json({ error: 'Failed to reject' }, { status: 500 });
-      }
-      return NextResponse.json({ success: true, status: 'REJECTED' });
-    }
-
-    // 3. Action is APPROVE
-    // Update evidence
-    await supabaseServer
-      .from('onboarding_evidence')
-      .update({ status: 'APPROVED' })
-      .eq('auth_id', identity.auth_id)
-      .eq('status', 'PENDING');
-
-    // Update freight_identities
-    const { error: approveError } = await supabaseServer
-      .from('freight_identities')
-      .update({
-        verification_status: 'VERIFIED',
-        trusted_role: identity.requested_role,
-        reviewed_at: decisionTime
-      })
-      .eq('id', identity.id);
-
-    await supabaseServer.from('reviewer_decisions').insert({
-      identity_id: identity.id,
-      auth_id: identity.auth_id,
-      evidence_id: currentEvidence?.id || null,
-      decision: 'VERIFIED',
-      reviewed_at: decisionTime
+    // 2. Call the atomic RPC to process the decision
+    const { data: result, error: rpcError } = await supabaseServer.rpc('process_reviewer_decision', {
+      p_identity_id: identity_id,
+      p_action: action,
+      p_rejection_reason: rejection_reason || null
     });
 
-    if (approveError) {
-      return NextResponse.json({ error: 'Failed to approve' }, { status: 500 });
+    if (rpcError) {
+      console.error('RPC Error:', rpcError);
+      // Determine if it's a known error from the RPC
+      if (rpcError.message === 'Identity not found') {
+        return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
+      }
+      if (rpcError.message === 'Identity is not pending') {
+        return NextResponse.json({ error: 'Identity is not pending' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Decision processing failed' }, { status: 500 });
     }
 
-    // 4. Create business record
-    if (identity.requested_role === 'DRIVER') {
-      // Create driver
-      // For MVP, auto-generate a driver code
-      const driverCode = `DRV-${identity.id.substring(0, 6).toUpperCase()}`;
-      await supabaseServer.from('drivers').insert({
-        auth_id: identity.auth_id,
-        driver_code: driverCode,
-        name: identity.email?.split('@')[0] || 'Unknown Driver',
-      });
-    } else if (identity.requested_role === 'COMPANY') {
-      // Create company
-      await supabaseServer.from('companies').insert({
-        auth_id: identity.auth_id,
-        name: identity.email?.split('@')[0] || 'Unknown Company',
-      });
-    }
-
-    return NextResponse.json({ success: true, status: 'VERIFIED' });
+    return NextResponse.json({ success: true, status: result.status });
 
   } catch (err) {
     console.error('Admin review error:', err);
