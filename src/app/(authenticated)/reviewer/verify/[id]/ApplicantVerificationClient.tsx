@@ -121,7 +121,7 @@ export default function ApplicantVerificationClient({ identity, evidence }: Prop
     submitDecision('REJECT', rejectReason.trim());
   };
 
-  const docLabel = evidence?.document_type === 'LICENSE' ? 'Driving Licence' : evidence?.document_type === 'GST' ? 'GST Document' : evidence?.document_type ?? 'Document';
+  const docLabel = evidence?.document_type === 'DRIVING_LICENCE' ? 'Driving Licence' : evidence?.document_type === 'GST' ? 'GST Document' : evidence?.document_type ?? 'Document';
 
   // --- Success / Decision Result State ---
   if (decisionState === 'success' && resultData) {

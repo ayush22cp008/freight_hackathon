@@ -19,7 +19,7 @@ export default function EvidenceViewerClient({ evidence }: { evidence: EvidenceR
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const docLabel = evidence?.document_type === 'LICENSE' ? 'Driving Licence' : evidence?.document_type === 'GST' ? 'GST Document' : evidence?.document_type ?? 'Document';
+  const docLabel = evidence?.document_type === 'DRIVING_LICENCE' ? 'Driving Licence' : evidence?.document_type === 'GST' ? 'GST Document' : evidence?.document_type ?? 'Document';
 
   const loadEvidence = async () => {
     if (!evidence?.storage_path) return;

@@ -78,7 +78,7 @@ export default async function ReviewerQueuePage() {
                 <p className="text-slate-500 text-xs">
                   Submitted {new Date(item.identity.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   {' · '}
-                  {item.evidence?.document_type === 'LICENSE' ? 'Driving Licence' : 'GST Document'}
+                  {item.evidence?.document_type === 'DRIVING_LICENCE' ? 'Driving Licence' : 'GST Document'}
                 </p>
               </div>
 
