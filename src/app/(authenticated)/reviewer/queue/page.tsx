@@ -35,7 +35,7 @@ export default async function ReviewerQueuePage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-2xl font-bold text-white">Verification Queue</h1>
+          <h1 className="text-2xl font-bold text-white">Reviewer Dashboard</h1>
           {pendingList.length > 0 && (
             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold">
               {pendingList.length} pending

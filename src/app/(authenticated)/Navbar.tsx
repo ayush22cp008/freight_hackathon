@@ -71,8 +71,8 @@ export default function Navbar({ userEmail, role }: { userEmail?: string; role?:
               )}
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
-            {userEmail && <span className="text-sm text-gray-500">{userEmail}</span>}
+          <div className="flex items-center space-x-2 sm:ml-6 sm:space-x-4">
+            {userEmail && <span className="text-sm text-gray-500 hidden sm:block">{userEmail}</span>}
             <button
               onClick={handleSignOut}
               className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
