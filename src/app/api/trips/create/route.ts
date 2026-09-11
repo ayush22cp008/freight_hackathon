@@ -46,6 +46,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid receiving company' }, { status: 400 });
     }
 
+    if (creatorCompany.id === receiving_company_id) {
+      return NextResponse.json({ error: 'Sender and receiving company cannot be the same for new trips' }, { status: 400 });
+    }
+
     const { data: newTrip, error: insertError } = await supabaseServer
       .from('trips')
       .insert({
@@ -68,20 +72,15 @@ export async function POST(request: Request) {
     }
 
     // Automatically create the receiver request
-    const isSameCompany = creatorCompany.id === receiving_company_id;
-    const requestState = isSameCompany ? 'ACCEPTED' : 'PENDING';
-    const decidedAt = isSameCompany ? new Date().toISOString() : null;
-    const decidedBy = isSameCompany ? receiving_company_id : null;
-
     const { error: requestError } = await supabaseServer
       .from('receiver_delivery_requests')
       .insert({
         trip_id: newTrip.id,
         sender_company_id: creatorCompany.id,
         receiving_company_id,
-        state: requestState,
-        decided_at: decidedAt,
-        decided_by: decidedBy
+        state: 'PENDING',
+        decided_at: null,
+        decided_by: null
       });
 
     if (requestError) {

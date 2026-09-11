@@ -16,10 +16,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const { data: userCompany } = await supabaseServer
+    .from('companies')
+    .select('id')
+    .eq('auth_id', user.id)
+    .single();
+
   // Workstream B: Fetch minimal company details for receiving company lookup
+  // Exclude the authenticated sender company
   const { data, error } = await supabaseServer
     .from('companies')
     .select('id, name')
+    .neq('id', userCompany?.id || 0)
     .order('name');
 
   if (error) {
