@@ -3,7 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata = {
-  title: 'Company Profile | Freight',
+  title: 'Company Profile | DeliveryProof',
 };
 
 export default async function CompanyProfilePage() {

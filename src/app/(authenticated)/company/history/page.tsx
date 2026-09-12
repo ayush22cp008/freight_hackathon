@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import CompanyHistoryClient from './CompanyHistoryClient';
 
 export const metadata = {
-  title: 'History | Freight Company',
+  title: 'History | DeliveryProof Company',
 };
 
 export default async function HistoryPage() {

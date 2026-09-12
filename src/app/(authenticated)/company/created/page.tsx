@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'My Created Trips | Freight Company',
+  title: 'My Created Trips | DeliveryProof Company',
 };
 
 export default async function CreatedTripsPage() {

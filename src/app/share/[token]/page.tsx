@@ -5,7 +5,7 @@ import { getPublicVerificationData } from '@/lib/public-share-lookup';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Public Evidence Verification | Freight',
+  title: 'Public Evidence Verification | DeliveryProof',
   robots: {
     index: false,
     follow: false,

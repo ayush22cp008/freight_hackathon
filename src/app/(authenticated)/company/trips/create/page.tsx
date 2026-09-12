@@ -1,7 +1,7 @@
 import CreateTripClient from './CreateTripClient';
 
 export const metadata = {
-  title: 'Create Trip | Freight',
+  title: 'Create Trip | DeliveryProof',
 };
 
 export default function CreateTripPage() {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ReceiverRequestActions from './ReceiverRequestActions';
 
 export const metadata = {
-  title: 'Incoming Deliveries | Freight Company',
+  title: 'Incoming Deliveries | DeliveryProof Company',
 };
 
 export default async function IncomingDeliveriesPage() {
