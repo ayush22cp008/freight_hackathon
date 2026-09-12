@@ -4,7 +4,7 @@
 
 Welcome to **DeliveryProof** (formerly Freight), an AI-assisted accountability and evidence platform for the logistics industry. 
 
-DeliveryProof establishes an immutable, evidence-backed timeline of facility interactions and delivery events. It serves as a shared source of truth connecting Companies (Senders/Receivers) and Drivers, ensuring that every claim—from arrival times to detention periods to final delivery—is backed by verified event history.
+DeliveryProof establishes a verifiable, evidence-backed timeline of facility interactions and delivery events. It serves as a shared source of truth connecting Companies (Senders/Receivers) and Drivers, ensuring that every claim—from arrival times to detention periods to final delivery—is backed by verified event history.
 
 ## 2. The Real Problem
 
@@ -22,7 +22,7 @@ Traditional evidence collection is flawed:
 
 ## 5. What We Discovered Through Research
 
-Our research highlighted that disputes rarely center on whether goods were delivered, but rather on *when* specific facility interactions occurred. Without an integrated, immutable timeline, proving detention or delays becomes a "he said, she said" battle between the driver and the facility.
+Our research highlighted that disputes rarely center on whether goods were delivered, but rather on *when* specific facility interactions occurred. Without an integrated, evidence-backed chronological record, proving detention or delays becomes a "he said, she said" battle between the driver and the facility.
 
 ## 6. The Market Gap
 
@@ -67,7 +67,7 @@ The platform's identity verification authority. **The Reviewer is NOT an unrestr
 
 Ready to try DeliveryProof? Here is the fastest path to see the system in action.
 
-**Public Deployed URL:** `(Please refer to the submission link / deployment URL provided in our project profile)`
+**Public Deployed URL:** `https://freighthackathon.vercel.app`
 
 **Recommended Fast-Path Walkthrough:**
 1. **Log in as Company (Sender):** Use the provided company demo credentials (e.g., `testc2` / `testc2@...`). Create a new Trip.
@@ -103,7 +103,7 @@ DeliveryProof is built on a modern Next.js stack with a Supabase backend. Key im
 - **Role-Aware Authentication & Authorization:** Secure routing and data access based on `FreightIdentity`.
 - **Atomic Driver Claim:** Marketplace transactions ensure a trip is claimed by exactly one driver without race conditions.
 - **Receiver Agreement Gate:** Trips cannot be published until the designated receiving company explicitly accepts the request.
-- **Delivery Evidence Flow:** Immutable logging of chronological events.
+- **Delivery Evidence Flow:** Verifiable logging of chronological events.
 - **Unified Trip Detail:** A single source of truth for trip state accessed differently based on role context.
 
 ## 14. 🔐 Security & Trust Model
@@ -116,9 +116,9 @@ Our security model enforces least-privilege access:
 
 ## 15. 🤖 AI — Where AI Is Actually Used
 
-DeliveryProof uses AI specifically for **narrative and claims generation**, not for deterministic logistics logic.
-- **What is Deterministic:** GPS, timestamps, and state machines remain strictly mathematical and programmatic.
-- **What is AI-Assisted:** Once a trip completes, an AI Evidence Summary is generated from the raw, deterministic timeline events, providing a human-readable, factual summary that can be immediately used for dispute resolution.
+AI is used in the product to generate an **evidence summary after trip completion**. 
+- The summary is based on structured delivery evidence/events such as event types, timestamps, GPS data, and photo presence where actually available.
+- Deterministic operational facts such as timestamps, GPS handling, state transitions, and other programmatic logic remain deterministic and are not delegated to AI.
 
 ## 16. ✅ Real Verification / Testing
 
@@ -129,7 +129,7 @@ The product has undergone rigorous verification:
 
 ## 17. 📈 Impact
 
-By standardizing delivery evidence, DeliveryProof reduces the administrative overhead of dispute resolution, ensures drivers are compensated for actual facility time, and provides companies with an undeniable audit trail of their freight operations.
+By standardizing delivery evidence, DeliveryProof reduces the administrative overhead of dispute resolution, helps drivers substantiate legitimate facility time and strengthen compensation claims, and provides companies with a verifiable audit trail of their freight operations.
 
 ## 18. 🎥 Demo
 
