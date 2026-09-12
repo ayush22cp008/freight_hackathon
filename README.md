@@ -67,7 +67,7 @@ The platform's identity verification authority. **The Reviewer is NOT an unrestr
 
 Ready to try DeliveryProof? Here is the fastest path to see the system in action.
 
-**Public Deployed URL:** `https://freighthackathon.vercel.app`
+**Public Deployed URL:** `https://deliveryproofhackathon.vercel.app`
 
 **Recommended Fast-Path Walkthrough:**
 1. **Log in as Company (Sender):** Use the provided company demo credentials (e.g., `testc2` / `testc2@...`). Create a new Trip.
@@ -112,7 +112,7 @@ Our security model enforces least-privilege access:
 - **Server-Side Authorization:** Role-sensitive actions are gated on the server.
 - **Receiver Protections:** Accept/reject actions are strictly limited to the receiving company associated with the trip.
 - **Trip Gating:** A new governance rule ensures a company cannot select itself as the receiver for new trips.
-- **Known Security Caveat:** While the application uses server-side gating (R-05), a known Row Level Security (RLS) gap for the Reviewer service-role (REV-03) is documented in our blueprints and awaits a future full RLS rewrite.
+- **Known Security Caveat:** Reviewer server-side data access uses the approved R-05 service-role gating path; a full RLS redesign was outside the current scope.
 
 ## 15. 🤖 AI — Where AI Is Actually Used
 
